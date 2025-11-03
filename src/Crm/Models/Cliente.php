@@ -2,6 +2,7 @@
 
 namespace FlipperBox\Crm\Models;
 
+use Database\Factories\ClienteFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,4 +24,14 @@ class Cliente extends Model
         'documento_tipo',
         'documento_valor',
     ];
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     */
+    protected static function newFactory()
+    {
+        return ClienteFactory::new();
+    }
 }
