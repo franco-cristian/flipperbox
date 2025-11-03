@@ -6,21 +6,22 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
 import Sidebar from '@/Components/Sidebar.vue';
+import FlashMessage from '@/Components/FlashMessage.vue';
 
 const showingNavigationDropdown = ref(false);
 </script>
 
 <template>
     <div class="flex h-screen bg-gray-100">
-        <!-- 1. Sidebar para Escritorio (Oculto en móvil) -->
+        <!-- Sidebar para Escritorio (Oculto en móvil) -->
         <aside class="z-20 h-full w-64 overflow-y-auto bg-white flex-shrink-0 hidden md:block">
             <Sidebar />
         </aside>
 
-        <!-- 2. Overlay para móvil (cuando el menú está abierto) -->
+        <!-- Overlay para móvil (cuando el menú está abierto) -->
         <div v-show="showingNavigationDropdown" @click="showingNavigationDropdown = false" class="fixed inset-0 z-20 bg-black opacity-50 md:hidden"></div>
         
-        <!-- 3. Menú Hamburguesa para Móvil -->
+        <!-- Menú Hamburguesa para Móvil -->
         <aside 
             class="fixed inset-y-0 z-30 flex-shrink-0 w-64 overflow-y-auto bg-white md:hidden" 
             v-show="showingNavigationDropdown"
@@ -28,7 +29,7 @@ const showingNavigationDropdown = ref(false);
         >
             <!-- Logo -->
             <div class="py-4 text-gray-500">
-                <Link class="ml-6" href="route('dashboard')">
+                <Link class="ml-6" href="dashboard">
                     <ApplicationLogo class="block h-10 w-auto" />
                 </Link>
             </div>
@@ -67,7 +68,7 @@ const showingNavigationDropdown = ref(false);
             </div>
         </aside>
 
-        <!-- 4. Contenido Principal de la Página -->
+        <!-- Contenido Principal de la Página -->
         <div class="flex flex-col flex-1 w-full">
             <!-- Barra de Navegación Superior -->
             <header class="z-10 py-4 bg-white shadow-md">
@@ -82,7 +83,6 @@ const showingNavigationDropdown = ref(false);
                         </svg>
                     </button>
                     
-                    <!-- Placeholder para empujar el menú de usuario a la derecha -->
                     <div class="flex-1"></div>
 
                     <!-- Menú de Usuario para Escritorio -->
@@ -109,6 +109,9 @@ const showingNavigationDropdown = ref(false);
                 </div>
             </header>
             
+            <!-- Componente de Notificación Flash -->
+            <FlashMessage />
+
             <main class="h-full overflow-y-auto">
                 <!-- Cabecera y Contenido de la Página (Slots) -->
                 <header class="bg-white shadow" v-if="$slots.header">

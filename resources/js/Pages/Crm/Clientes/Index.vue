@@ -18,8 +18,7 @@ defineProps({
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Clientes</h2>
-                <!-- El botón 'Crear' por ahora apunta al dashboard como placeholder -->
-                <Link :href="route('dashboard')" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
+                <Link :href="route('clientes.create')" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
                     Crear Nuevo Cliente
                 </Link>
             </div>
