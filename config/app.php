@@ -178,6 +178,7 @@ return [
         /*
          * Módulos de la Aplicación FlipperBox
          */
+        FlipperBox\Core\Providers\CoreServiceProvider::class,
         FlipperBox\Crm\Providers\CrmServiceProvider::class,
 
     ],

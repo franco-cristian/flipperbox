@@ -1,11 +1,11 @@
 <?php
 
-namespace FlipperBox\Crm\Providers;
+namespace FlipperBox\Core\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
-class CrmServiceProvider extends ServiceProvider
+class CoreServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
