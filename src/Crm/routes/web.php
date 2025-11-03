@@ -3,15 +3,17 @@
 use FlipperBox\Crm\Http\Controllers\ClienteController;
 use Illuminate\Support\Facades\Route;
 
-// Rutas para la gestión de Clientes
-Route::get('/clientes', [ClienteController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('clientes.index');
+// Agrupamos todas las rutas de CRM para que requieran autenticación
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/clientes', [ClienteController::class, 'index'])
+        ->name('clientes.index');
 
-Route::get('/clientes/crear', [ClienteController::class, 'create'])
-    ->middleware(['auth', 'verified'])
-    ->name('clientes.create');
+    // Protegemos las acciones de creación solo para quienes tengan el permiso
+    Route::get('/clientes/crear', [ClienteController::class, 'create'])
+        ->middleware('can:crear clientes')
+        ->name('clientes.create');
 
-Route::post('/clientes', [ClienteController::class, 'store'])
-    ->middleware(['auth', 'verified'])
-    ->name('clientes.store');
+    Route::post('/clientes', [ClienteController::class, 'store'])
+        ->middleware('can:crear clientes')
+        ->name('clientes.store');
+});

@@ -30,6 +30,7 @@
             "App\\": "app/",
             "FlipperBox\\Core\\": "src/Core/",
             "FlipperBox\\Crm\\": "src/Crm/",
+            "FlipperBox\\MechanicPanel\\": "src/MechanicPanel/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }
