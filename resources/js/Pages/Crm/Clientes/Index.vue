@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
 
 defineProps({
@@ -9,6 +9,8 @@ defineProps({
         required: true,
     },
 });
+
+const can = (permission) => usePage().props.auth.user.permissions.includes(permission);
 </script>
 
 <template>
@@ -18,7 +20,8 @@ defineProps({
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Clientes</h2>
-                <Link :href="route('clientes.create')" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
+                <!-- Usamos v-if para mostrar el botón solo si el usuario tiene el permiso -->
+                <Link v-if="can('crear clientes')" :href="route('clientes.create')" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
                     Crear Nuevo Cliente
                 </Link>
             </div>
@@ -46,11 +49,11 @@ defineProps({
                                         <td class="px-6 py-4">{{ cliente.email }}</td>
                                         <td class="px-6 py-4">{{ cliente.telefono }}</td>
                                         <td class="px-6 py-4 text-right">
-                                            <Link :href="route('dashboard')" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
-                                            <Link :href="route('dashboard')" class="font-medium text-red-600 hover:underline">Eliminar</Link>
+                                            <!-- Ocultar estos botones de la misma forma en el futuro -->
+                                            <Link v-if="can('editar clientes')" :href="route('dashboard')" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
+                                            <Link v-if="can('eliminar clientes')" :href="route('dashboard')" class="font-medium text-red-600 hover:underline">Eliminar</Link>
                                         </td>
                                     </tr>
-                                    <!-- Mensaje si no hay clientes -->
                                     <tr v-if="clientes.data.length === 0">
                                         <td colspan="4" class="px-6 py-4 text-center text-gray-500">
                                             No se encontraron clientes.
@@ -61,11 +64,9 @@ defineProps({
                         </div>
                     </div>
                     
-                    <!-- Paginación -->
                     <div v-if="clientes.links.length > 3" class="p-6 border-t">
                         <Pagination :links="clientes.links" />
                     </div>
-
                 </div>
             </div>
         </div>
