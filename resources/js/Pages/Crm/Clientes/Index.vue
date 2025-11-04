@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
-import ConfirmationModal from '@/Components/ConfirmationModal.vue'; // <-- Importamos el modal
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import { ref } from 'vue';
 
 defineProps({
@@ -14,7 +14,7 @@ defineProps({
 
 const can = (permission) => usePage().props.auth.user.permissions.includes(permission);
 
-// --- Lógica para el Modal de Eliminación ---
+// Lógica para el Modal de Eliminación
 const confirmingClientDeletion = ref(false);
 const clientToDelete = ref(null);
 
@@ -34,39 +34,62 @@ const closeModal = () => {
     confirmingClientDeletion.value = false;
     clientToDelete.value = null;
 };
-// --- Fin de la Lógica del Modal ---
 </script>
 
 <template>
+
     <Head title="Clientes" />
+
     <AuthenticatedLayout>
         <template #header>
-            <!-- ... (sin cambios aquí) ... -->
+            <div class="flex justify-between items-center">
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Clientes</h2>
+                <Link v-if="can('crear clientes')" :href="route('clientes.create')"
+                    class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
+                Crear Nuevo Cliente
+                </Link>
+            </div>
         </template>
+
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left text-gray-500">
-                                <!-- ... (thead sin cambios) ... -->
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Nombre Completo</th>
+                                        <th scope="col" class="px-6 py-3">Email</th>
+                                        <th scope="col" class="px-6 py-3">Teléfono</th>
+                                        <th scope="col" class="px-6 py-3 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
-                                    <tr v-for="cliente in clientes.data" :key="cliente.id" class="bg-white border-b hover:bg-gray-50">
+                                    <tr v-for="cliente in clientes.data" :key="cliente.id"
+                                        class="bg-white border-b hover:bg-gray-50">
                                         <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                            <Link :href="route('clientes.show', cliente.id)" class="hover:underline text-blue-600">
-                                                {{ cliente.nombre }} {{ cliente.apellido }}
+                                            <Link :href="route('clientes.show', cliente.id)"
+                                                class="hover:underline text-blue-600">
+                                            {{ cliente.nombre }} {{ cliente.apellido }}
                                             </Link>
                                         </th>
                                         <td class="px-6 py-4">{{ cliente.email }}</td>
                                         <td class="px-6 py-4">{{ cliente.telefono }}</td>
                                         <td class="px-6 py-4 text-right">
-                                            <!-- ENLACE DE EDICIÓN CORREGIDO -->
-                                            <Link v-if="can('editar clientes')" :href="route('clientes.edit', cliente.id)" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
-                                            <!-- BOTÓN DE ELIMINACIÓN CORREGIDO -->
-                                            <button v-if="can('eliminar clientes')" @click="confirmClientDeletion(cliente)" class="font-medium text-red-600 hover:underline">Eliminar</button>
+                                            <Link v-if="can('editar clientes')"
+                                                :href="route('clientes.edit', cliente.id)"
+                                                class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
+                                            <button v-if="can('eliminar clientes')"
+                                                @click="confirmClientDeletion(cliente)"
+                                                class="font-medium text-red-600 hover:underline">Eliminar</button>
                                         </td>
                                     </tr>
-                                    <!-- ... (tr para 'no se encontraron clientes' sin cambios) ... -->
+                                    <tr v-if="clientes.data.length === 0">
+                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">No se encontraron
+                                            clientes.
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -79,12 +102,8 @@ const closeModal = () => {
         </div>
 
         <!-- MODAL DE CONFIRMACIÓN -->
-        <ConfirmationModal 
-            :show="confirmingClientDeletion" 
-            @close="closeModal"
-            @confirm="deleteClient"
+        <ConfirmationModal :show="confirmingClientDeletion" @close="closeModal" @confirm="deleteClient"
             title="Eliminar Cliente"
-            :message="`¿Estás seguro de que deseas eliminar a ${clientToDelete?.nombre} ${clientToDelete?.apellido}? Esta acción no se puede deshacer.`"
-        />
+            :message="`¿Estás seguro de que deseas eliminar a ${clientToDelete?.nombre} ${clientToDelete?.apellido}? Esta acción no se puede deshacer.`" />
     </AuthenticatedLayout>
 </template>

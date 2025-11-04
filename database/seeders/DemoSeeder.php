@@ -12,27 +12,28 @@ use Spatie\Permission\PermissionRegistrar;
 
 class DemoSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         // Resetear roles y permisos cacheados
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
+        // Definimos el guard explícitamente
+        $guard = 'web';
+
         // --- CREACIÓN DE PERMISOS ---
-        Permission::create(['name' => 'ver clientes']);
-        Permission::create(['name' => 'crear clientes']);
-        Permission::create(['name' => 'editar clientes']);
-        Permission::create(['name' => 'eliminar clientes']);
-        Permission::create(['name' => 'crear vehiculos']);
-        Permission::create(['name' => 'editar vehiculos']);
-        Permission::create(['name' => 'eliminar vehiculos']);
+        $permissions = [
+            'ver clientes', 'crear clientes', 'editar clientes', 'eliminar clientes',
+            'crear vehiculos', 'editar vehiculos', 'eliminar vehiculos',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::create(['name' => $permission, 'guard_name' => $guard]);
+        }
 
         // --- CREACIÓN DE ROLES ---
-        $adminRole = Role::create(['name' => 'Admin']);
-        $mecanicoRole = Role::create(['name' => 'Mecanico']);
-        $clienteRole = Role::create(['name' => 'Cliente']);
+        $adminRole = Role::create(['name' => 'Admin', 'guard_name' => $guard]);
+        $mecanicoRole = Role::create(['name' => 'Mecanico', 'guard_name' => $guard]);
+        $clienteRole = Role::create(['name' => 'Cliente', 'guard_name' => $guard]);
 
         // --- ASIGNACIÓN DE PERMISOS A ROLES ---
         $adminRole->givePermissionTo(Permission::all());
