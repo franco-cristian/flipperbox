@@ -18,5 +18,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('/clientes/{cliente}/vehiculos')->name('clientes.vehiculos.')->group(function () {
         Route::get('/crear', [VehiculoController::class, 'create'])->middleware('can:crear vehiculos')->name('create');
         Route::post('/', [VehiculoController::class, 'store'])->middleware('can:crear vehiculos')->name('store');
+        Route::get('/{vehiculo}/editar', [VehiculoController::class, 'edit'])->middleware('can:editar vehiculos')->name('edit');
+        Route::patch('/{vehiculo}', [VehiculoController::class, 'update'])->middleware('can:editar vehiculos')->name('update');
+        Route::delete('/{vehiculo}', [VehiculoController::class, 'destroy'])->middleware('can:eliminar vehiculos')->name('destroy');
     });
 });

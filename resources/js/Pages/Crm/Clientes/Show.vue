@@ -1,6 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
+import { ref } from 'vue';
 
 // Definimos las props que el controlador nos enviará
 const props = defineProps({
@@ -12,6 +14,29 @@ const props = defineProps({
 
 // Helper para verificar permisos
 const can = (permission) => usePage().props.auth.user.permissions.includes(permission);
+
+// --- Lógica para el Modal de Eliminación de Vehículo ---
+const confirmingVehicleDeletion = ref(false);
+const vehicleToDelete = ref(null);
+
+const confirmVehicleDeletion = (vehiculo) => {
+    vehicleToDelete.value = vehiculo;
+    confirmingVehicleDeletion.value = true;
+};
+
+const deleteVehicle = () => {
+    // Usamos la ruta anidada, pasando ambos IDs (cliente y vehículo)
+    router.delete(route('clientes.vehiculos.destroy', { cliente: props.cliente.id, vehiculo: vehicleToDelete.value.id }), {
+        onSuccess: () => closeModal(),
+        preserveScroll: true,
+    });
+};
+
+const closeModal = () => {
+    confirmingVehicleDeletion.value = false;
+    vehicleToDelete.value = null;
+};
+// --- Fin de la Lógica del Modal ---
 </script>
 
 <template>
@@ -85,8 +110,8 @@ const can = (permission) => usePage().props.auth.user.permissions.includes(permi
                                         <td class="px-6 py-4">{{ vehiculo.modelo }}</td>
                                         <td class="px-6 py-4">{{ vehiculo.anio }}</td>
                                         <td class="px-6 py-4 text-right">
-                                            <Link :href="route('dashboard')" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
-                                            <Link :href="route('dashboard')" class="font-medium text-red-600 hover:underline">Eliminar</Link>
+                                            <Link v-if="can('editar vehiculos')" :href="route('clientes.vehiculos.edit', { cliente: cliente.id, vehiculo: vehiculo.id })" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
+                                            <button v-if="can('eliminar vehiculos')" @click="confirmVehicleDeletion(vehiculo)" class="font-medium text-red-600 hover:underline">Eliminar</button>
                                         </td>
                                     </tr>
                                     <tr v-if="cliente.vehiculos.length === 0">
@@ -99,5 +124,14 @@ const can = (permission) => usePage().props.auth.user.permissions.includes(permi
                 </div>
             </div>
         </div>
+
+        <!-- MODAL DE CONFIRMACIÓN PARA VEHÍCULOS -->
+        <ConfirmationModal 
+            :show="confirmingVehicleDeletion" 
+            @close="closeModal"
+            @confirm="deleteVehicle"
+            title="Eliminar Vehículo"
+            :message="`¿Estás seguro de que deseas eliminar el vehículo con patente ${vehicleToDelete?.patente}? Esta acción no se puede deshacer.`"
+        />
     </AuthenticatedLayout>
 </template>
