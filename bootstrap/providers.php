@@ -2,6 +2,7 @@
 
 return [
     App\Providers\AppServiceProvider::class,
-    App\Providers\CrmServiceProvider::class,
-    App\Providers\MechanicPanelServiceProvider::class,
+    FlipperBox\Core\Providers\CoreServiceProvider::class,
+    FlipperBox\Crm\Providers\CrmServiceProvider::class,
+    FlipperBox\MechanicPanel\Providers\MechanicPanelServiceProvider::class,
 ];

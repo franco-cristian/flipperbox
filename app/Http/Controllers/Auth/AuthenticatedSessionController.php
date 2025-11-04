@@ -30,21 +30,15 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
-
-        // --- LÓGICA DE REDIRECCIÓN POR ROL ---
         $user = $request->user();
 
-        if ($user->hasRole('Admin')) {
-            return redirect()->intended(route('dashboard'));
-        }
-
+        // Solo el Mecánico tiene una redirección especial
         if ($user->hasRole('Mecanico')) {
             return redirect()->intended(route('mecanico.dashboard'));
         }
-        
-        // Redirección por defecto para otros roles (ej. Cliente)
+
+        // Todos los demás (Admin, Cliente) van al dashboard principal
         return redirect()->intended(route('dashboard'));
     }
 
