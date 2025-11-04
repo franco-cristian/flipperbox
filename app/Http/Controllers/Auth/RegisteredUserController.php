@@ -45,10 +45,11 @@ class RegisteredUserController extends Controller
 
         $clienteRole = Role::findByName('Cliente');
         $user->assignRole($clienteRole);
+
         event(new Registered($user));
         Auth::login($user);
 
-        // Un cliente nuevo siempre va al dashboard principal
-        return redirect(route('dashboard'));
+        // Redirección correcta al dashboard del cliente
+        return redirect(route('cliente.dashboard'));
     }
 }

@@ -5,4 +5,5 @@ return [
     FlipperBox\Core\Providers\CoreServiceProvider::class,
     FlipperBox\Crm\Providers\CrmServiceProvider::class,
     FlipperBox\MechanicPanel\Providers\MechanicPanelServiceProvider::class,
+    FlipperBox\ClientPortal\Providers\ClientPortalServiceProvider::class,
 ];

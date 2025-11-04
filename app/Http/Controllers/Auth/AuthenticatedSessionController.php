@@ -33,12 +33,17 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
         $user = $request->user();
 
-        // Solo el Mecánico tiene una redirección especial
+        if ($user->hasRole('Admin')) {
+            return redirect()->intended(route('dashboard'));
+        }
         if ($user->hasRole('Mecanico')) {
             return redirect()->intended(route('mecanico.dashboard'));
         }
+        if ($user->hasRole('Cliente')) {
+            return redirect()->intended(route('cliente.dashboard'));
+        }
 
-        // Todos los demás (Admin, Cliente) van al dashboard principal
+        // Fallback por si un usuario no tiene un rol principal
         return redirect()->intended(route('dashboard'));
     }
 

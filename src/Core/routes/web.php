@@ -29,7 +29,7 @@ Route::get('/', function () {
 // --- Ruta del Dashboard Principal (Accesible para cualquier usuario autenticado) ---
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'role:Admin'])->name('dashboard');
 
 // --- Rutas de Gestión de Perfil (Accesible para cualquier usuario autenticado) ---
 Route::middleware('auth')->group(function () {
