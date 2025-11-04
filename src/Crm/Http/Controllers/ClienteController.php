@@ -39,4 +39,14 @@ class ClienteController extends Controller
 
         return to_route('clientes.index')->with('success', 'Cliente creado exitosamente.');
     }
+
+    public function show(Cliente $cliente): Response
+    {
+        // Cargamos la relación 'vehiculos' para pasarla al frontend
+        $cliente->load('vehiculos');
+
+        return Inertia::render('Crm/Clientes/Show', [
+            'cliente' => $cliente,
+        ]);
+    }
 }
