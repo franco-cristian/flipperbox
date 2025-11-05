@@ -13,6 +13,8 @@ const showingNavigationDropdown = ref(false);
 const navigationLinks = ref([
     { name: 'Dashboard', routeName: 'dashboard', permission: null },
     { name: 'Clientes', routeName: 'clientes.index', permission: 'ver clientes' },
+    { name: 'Productos', routeName: 'inventario.products.index', permission: 'ver inventario' },
+    { name: 'Proveedores', routeName: 'inventario.suppliers.index', permission: 'ver proveedores' },
 ]);
 
 const can = (permission) => {
@@ -106,3 +108,4 @@ const can = (permission) => {
         </div>
     </div>
 </template>
+

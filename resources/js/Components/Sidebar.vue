@@ -7,7 +7,9 @@ import { ref } from 'vue';
 const navigationLinks = ref([
     { name: 'Dashboard', href: route('dashboard'), permission: null }, // Sin permiso, visible para todos
     { name: 'Clientes', href: route('clientes.index'), permission: 'ver clientes' },
-    // Aquí añadiremos más enlaces en el futuro (Inventario, Turnos, etc.)
+    { name: 'Productos', href: route('inventario.products.index'), permission: 'ver inventario' },
+    { name: 'Proveedores', href: route('inventario.suppliers.index'), permission: 'ver proveedores' },
+    // Aquí añadiremos más enlaces en el futuro (Turnos, etc.)
 ]);
 
 // Creamos una función helper para verificar permisos
