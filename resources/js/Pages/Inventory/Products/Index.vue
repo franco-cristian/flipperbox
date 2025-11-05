@@ -20,7 +20,7 @@ const can = (permission) => usePage().props.auth.user.permissions.includes(permi
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Productos</h2>
-                <Link v-if="can('gestionar inventario')" :href="route('dashboard')" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
+                <Link v-if="can('gestionar inventario')" :href="route('inventario.products.create')" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
                     Crear Nuevo Producto
                 </Link>
             </div>
