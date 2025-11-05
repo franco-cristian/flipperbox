@@ -1,4 +1,5 @@
 <?php
+
 namespace FlipperBox\Inventory\Actions;
 
 use FlipperBox\Inventory\Models\Product;
@@ -12,23 +13,21 @@ class CrearNuevoProductoAction
     public function execute(array $data): Product
     {
         return DB::transaction(function () use ($data) {
-            // 1. Crear el producto
-            $product = Product::create([
-                'name' => $data['name'],
-                'sku' => $data['sku'],
-                'description' => $data['description'] ?? null,
-                'price' => $data['price'],
-                'current_stock' => $data['current_stock'],
-                'min_threshold' => $data['min_threshold'],
-            ]);
+            // 1. Instanciamos el modelo y asignamos propiedades
+            $product = new Product();
+            $product->fill($data);
+            $product->save();
 
-            // 2. Si hay stock inicial, crear el primer movimiento de inventario
-            if ($data['current_stock'] > 0) {
+            // 2. Vinculamos el producto con el proveedor en la tabla pivot
+            $product->suppliers()->attach($data['supplier_id'], ['cost' => $data['cost']]);
+
+            // 3. Si hay stock inicial, crear el primer movimiento de inventario
+            if ($product->current_stock > 0) {
                 InventoryMovement::create([
                     'product_id' => $product->id,
                     'user_id' => Auth::id(),
                     'type' => 'in',
-                    'quantity' => $data['current_stock'],
+                    'quantity' => $product->current_stock,
                     'reason' => 'Stock Inicial',
                 ]);
             }

@@ -16,7 +16,10 @@ return new class extends Migration
             $table->string('name');
             $table->string('sku')->unique()->comment('Stock Keeping Unit');
             $table->text('description')->nullable();
-            $table->decimal('price', 10, 2)->comment('Precio de venta');
+            $table->decimal('cost', 10, 2)->comment('Precio de compra');
+            $table->decimal('iva_percentage', 5, 2)->default(21.00)->comment('Porcentaje de IVA');
+            $table->decimal('profit_margin', 5, 2)->default(40.00)->comment('Margen de ganancia');
+            $table->decimal('price', 10, 2)->comment('Precio de venta (calculado)');
             $table->integer('current_stock')->default(0);
             $table->integer('min_threshold')->default(5)->comment('Umbral de stock bajo');
             $table->timestamps();
