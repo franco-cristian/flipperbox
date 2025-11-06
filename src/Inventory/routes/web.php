@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('can:ver inventario')->prefix('inventario')->name('inventario.')->group(function () {
     Route::get('/productos', [ProductController::class, 'index'])->name('products.index');
     
-    // Rutas protegidas por el permiso de gestión
     Route::middleware('can:gestionar inventario')->group(function() {
         Route::get('/productos/crear', [ProductController::class, 'create'])->name('products.create');
         Route::post('/productos', [ProductController::class, 'store'])->name('products.store');
@@ -19,7 +18,14 @@ Route::middleware('can:ver inventario')->prefix('inventario')->name('inventario.
 });
 
 // Rutas para Proveedores
-Route::middleware('can:ver proveedores')->prefix('inventario')->name('inventario.')->group(function () {
-    Route::get('/proveedores', [SupplierController::class, 'index'])->name('suppliers.index');
-    // Agregaremos más rutas aquí
+Route::prefix('inventario')->name('inventario.')->group(function () {
+    Route::get('/proveedores', [SupplierController::class, 'index'])->middleware('can:ver proveedores')->name('suppliers.index');
+    
+    Route::middleware('can:gestionar proveedores')->group(function() {
+        Route::get('/proveedores/crear', [SupplierController::class, 'create'])->name('suppliers.create');
+        Route::post('/proveedores', [SupplierController::class, 'store'])->name('suppliers.store');
+        Route::get('/proveedores/{supplier}/editar', [SupplierController::class, 'edit'])->name('suppliers.edit');
+        Route::patch('/proveedores/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
+        Route::delete('/proveedores/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
+    });
 });
