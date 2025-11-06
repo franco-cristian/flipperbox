@@ -12,6 +12,7 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use FlipperBox\WorkManagement\Models\Service;
+use FlipperBox\WorkManagement\Models\WorkOrder;
 
 class DemoSeeder extends Seeder
 {
@@ -113,5 +114,52 @@ class DemoSeeder extends Seeder
         Service::create(['name' => 'Cambio de Aceite y Filtros', 'price' => 50.00]);
         Service::create(['name' => 'Diagnóstico General', 'price' => 30.00]);
         Service::create(['name' => 'Reparación de Tren Delantero', 'price' => 150.00]);
+
+        // --- ÓRDENES DE TRABAJO DE PRUEBA ---
+        $vehiculos = Vehiculo::all();
+        $mecanico = User::where('email', 'mecanico@flipperbox.com')->first();
+        $producto1 = Product::where('sku', 'J3393PA')->first(); // Filtro Aceite
+        $servicio1 = Service::where('name', 'Cambio de Aceite y Filtros')->first();
+
+        if ($vehiculos->count() > 0 && $mecanico && $producto1 && $servicio1) {
+            // --- Orden Completada (con ítems) ---
+            $ordenCompletada = WorkOrder::create([
+                'vehicle_id' => $vehiculos->random()->id,
+                'mechanic_id' => $mecanico->id,
+                'status' => 'Completada',
+                'description' => 'Servicio completo de 50.000km.',
+                'completion_date' => now(),
+            ]);
+            
+            // Asociamos productos
+            $ordenCompletada->products()->attach($producto1->id, [
+                'quantity' => 1,
+                'unit_price' => $producto1->price,
+            ]);
+
+            // Asociamos servicios (mano de obra)
+            $ordenCompletada->services()->attach($servicio1->id, [
+                'price' => $servicio1->price,
+            ]);
+            
+            // Calculamos y guardamos el total
+            $total = ($producto1->price * 1) + $servicio1->price;
+            $ordenCompletada->update(['total' => $total]);
+
+            // --- Orden en Progreso ---
+            WorkOrder::create([
+                'vehicle_id' => $vehiculos->random()->id,
+                'mechanic_id' => $mecanico->id,
+                'status' => 'En Progreso',
+                'description' => 'Revisión de tren delantero, ruido al girar.',
+            ]);
+
+            // --- Orden Pendiente ---
+            WorkOrder::create([
+                'vehicle_id' => $vehiculos->random()->id,
+                'status' => 'Pendiente',
+                'description' => 'Falla en el arranque, posible problema eléctrico.',
+            ]);
+        }
     }
 }
