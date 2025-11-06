@@ -22,5 +22,7 @@ Route::middleware('can:ver ordenes de trabajo')->prefix('ordenes-trabajo')->name
         
         Route::post('/{workOrder}/external-costs', [WorkOrderController::class, 'addExternalCost'])->name('external-costs.add');
         Route::delete('/external-costs/{externalCost}', [WorkOrderController::class, 'removeExternalCost'])->name('external-costs.remove');
+
+        Route::patch('/{workOrder}/assign-mechanic', [WorkOrderController::class, 'assignMechanic'])->name('assign-mechanic');
     });
 });
