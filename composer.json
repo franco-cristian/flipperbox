@@ -33,6 +33,7 @@
             "FlipperBox\\MechanicPanel\\": "src/MechanicPanel/",
             "FlipperBox\\ClientPortal\\": "src/ClientPortal/",
             "FlipperBox\\Inventory\\": "src/Inventory/",
+            "FlipperBox\\WorkManagement\\": "src/WorkManagement/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }

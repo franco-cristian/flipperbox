@@ -11,6 +11,7 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
+use FlipperBox\WorkManagement\Models\Service;
 
 class DemoSeeder extends Seeder
 {
@@ -27,9 +28,19 @@ class DemoSeeder extends Seeder
 
         // --- CREACIÓN DE PERMISOS ---
         $permissions = [
-            'ver clientes', 'crear clientes', 'editar clientes', 'eliminar clientes',
-            'crear vehiculos', 'editar vehiculos', 'eliminar vehiculos',
-            'ver inventario', 'gestionar inventario', 'ver proveedores', 'gestionar proveedores',
+            'ver clientes',
+            'crear clientes',
+            'editar clientes',
+            'eliminar clientes',
+            'crear vehiculos',
+            'editar vehiculos',
+            'eliminar vehiculos',
+            'ver inventario',
+            'gestionar inventario',
+            'ver proveedores',
+            'gestionar proveedores',
+            'ver ordenes de trabajo',
+            'gestionar ordenes de trabajo',
         ];
 
         foreach ($permissions as $permission) {
@@ -43,7 +54,7 @@ class DemoSeeder extends Seeder
 
         // --- ASIGNACIÓN DE PERMISOS A ROLES ---
         $adminRole->givePermissionTo(Permission::all());
-        $mecanicoRole->givePermissionTo(['ver clientes', 'ver inventario']);
+        $mecanicoRole->givePermissionTo(['ver clientes', 'ver inventario', 'ver ordenes de trabajo', 'gestionar ordenes de trabajo']);
 
         // --- CREACIÓN DE USUARIOS DE PRUEBA ---
         $adminUser = User::factory()->create([
@@ -57,7 +68,7 @@ class DemoSeeder extends Seeder
             'email' => 'mecanico@flipperbox.com',
         ]);
         $mecanicoUser->assignRole($mecanicoRole);
-        
+
         // --- CREACIÓN DE CLIENTES Y VEHÍCULOS DE PRUEBA ---
         Cliente::factory(50)
             ->has(Vehiculo::factory()->count(fake()->numberBetween(1, 3)))
@@ -81,7 +92,7 @@ class DemoSeeder extends Seeder
             // Calcular el precio explícitamente antes de crear el producto
             $costWithIva = $data['cost'] * (1 + ($data['iva_percentage'] / 100));
             $price = $costWithIva * (1 + ($data['profit_margin'] / 100));
-            
+
             $product = Product::create([
                 'name' => $data['name'],
                 'sku' => $data['sku'],
@@ -98,5 +109,9 @@ class DemoSeeder extends Seeder
                 $product->suppliers()->attach($data['supplier']->id, ['cost' => $data['supplier_cost']]);
             }
         }
+
+        Service::create(['name' => 'Cambio de Aceite y Filtros', 'price' => 50.00]);
+        Service::create(['name' => 'Diagnóstico General', 'price' => 30.00]);
+        Service::create(['name' => 'Reparación de Tren Delantero', 'price' => 150.00]);
     }
 }
