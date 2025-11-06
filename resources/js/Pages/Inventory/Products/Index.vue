@@ -1,7 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
+import { ref } from 'vue';
 
 defineProps({
     products: {
@@ -11,11 +13,31 @@ defineProps({
 });
 
 const can = (permission) => usePage().props.auth.user.permissions.includes(permission);
+
+// --- Lógica para el Modal de Eliminación ---
+const confirmingProductDeletion = ref(false);
+const productToDelete = ref(null);
+
+const confirmProductDeletion = (product) => {
+    productToDelete.value = product;
+    confirmingProductDeletion.value = true;
+};
+
+const deleteProduct = () => {
+    router.delete(route('inventario.products.destroy', productToDelete.value.id), {
+        onSuccess: () => closeModal(),
+        preserveScroll: true,
+    });
+};
+
+const closeModal = () => {
+    confirmingProductDeletion.value = false;
+    productToDelete.value = null;
+};
 </script>
 
 <template>
     <Head title="Productos" />
-
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
@@ -25,7 +47,6 @@ const can = (permission) => usePage().props.auth.user.permissions.includes(permi
                 </Link>
             </div>
         </template>
-
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -48,8 +69,9 @@ const can = (permission) => usePage().props.auth.user.permissions.includes(permi
                                         <td class="px-6 py-4">${{ product.price }}</td>
                                         <td class="px-6 py-4">{{ product.current_stock }}</td>
                                         <td class="px-6 py-4 text-right">
-                                            <Link v-if="can('gestionar inventario')" :href="route('dashboard')" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
-                                            <button v-if="can('gestionar inventario')" class="font-medium text-red-600 hover:underline">Eliminar</button>
+                                            <!-- ENLACES CORREGIDOS -->
+                                            <Link v-if="can('gestionar inventario')" :href="route('inventario.products.edit', product.id)" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
+                                            <button v-if="can('gestionar inventario')" @click="confirmProductDeletion(product)" class="font-medium text-red-600 hover:underline">Eliminar</button>
                                         </td>
                                     </tr>
                                     <tr v-if="products.data.length === 0">
@@ -65,5 +87,14 @@ const can = (permission) => usePage().props.auth.user.permissions.includes(permi
                 </div>
             </div>
         </div>
+
+        <!-- MODAL DE CONFIRMACIÓN PARA PRODUCTOS -->
+        <ConfirmationModal 
+            :show="confirmingProductDeletion" 
+            @close="closeModal"
+            @confirm="deleteProduct"
+            title="Eliminar Producto"
+            :message="`¿Estás seguro de que deseas eliminar el producto '${productToDelete?.name}'? Esta acción no se puede deshacer.`"
+        />
     </AuthenticatedLayout>
 </template>
