@@ -71,7 +71,7 @@ const formatDate = (dateString) => {
                                         </td>
                                         <td class="px-6 py-4">{{ formatDate(workOrder.entry_date) }}</td>
                                         <td class="px-6 py-4 text-right">
-                                            <Link :href="route('dashboard')" class="font-medium text-blue-600 hover:underline mr-4">Ver Detalle</Link>
+                                            <Link :href="route('work-orders.show', workOrder.id)" class="font-medium text-blue-600 hover:underline mr-4">Ver Detalle</Link>
                                         </td>
                                     </tr>
                                     <tr v-if="workOrders.data.length === 0">

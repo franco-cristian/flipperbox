@@ -110,6 +110,7 @@ const closeModal = () => {
                                         <td class="px-6 py-4">{{ vehiculo.modelo }}</td>
                                         <td class="px-6 py-4">{{ vehiculo.anio }}</td>
                                         <td class="px-6 py-4 text-right">
+                                        <Link :href="route('work-orders.create', { vehiculo: vehiculo.id })" class="font-medium text-green-600 hover:underline mr-4">Crear Orden de Trabajo</Link>
                                             <Link v-if="can('editar vehiculos')" :href="route('clientes.vehiculos.edit', { cliente: cliente.id, vehiculo: vehiculo.id })" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
                                             <button v-if="can('eliminar vehiculos')" @click="confirmVehicleDeletion(vehiculo)" class="font-medium text-red-600 hover:underline">Eliminar</button>
                                         </td>
