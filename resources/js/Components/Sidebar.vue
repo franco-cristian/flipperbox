@@ -10,6 +10,7 @@ const navigationLinks = ref([
     { name: 'Productos', href: route('inventario.products.index'), permission: 'ver inventario' },
     { name: 'Proveedores', href: route('inventario.suppliers.index'), permission: 'ver proveedores' },
     { name: 'Órdenes de Trabajo', href: route('work-orders.index'), permission: 'ver ordenes de trabajo' },
+    { name: 'Gestión de Cupos', href: route('admin.scheduling.capacities.index'), permission: 'gestionar cupos' },
     // Aquí añadiremos más enlaces en el futuro (Turnos, etc.)
 ]);
 
