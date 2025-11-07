@@ -4,27 +4,17 @@ import Modal from './Modal.vue';
 const emit = defineEmits(['close', 'confirm']);
 
 defineProps({
-    show: {
-        type: Boolean,
-        default: false,
-    },
-    title: {
-        type: String,
-        default: 'Confirmar Acción'
-    },
-    message: {
-        type: String,
-        default: '¿Estás seguro de que deseas realizar esta acción?'
-    }
+    show: { type: Boolean, default: false },
+    title: { type: String, default: 'Confirmar Acción' },
+    message: { type: String, default: '¿Estás seguro de que deseas realizar esta acción?' },
+    
+    // --- NUEVAS PROPS PARA FLEXIBILIDAD ---
+    confirmButtonText: { type: String, default: 'Confirmar' },
+    confirmButtonClass: { type: String, default: 'bg-red-600 hover:bg-red-700' }, // Color por defecto (peligro)
 });
 
-const closeModal = () => {
-    emit('close');
-};
-
-const confirmAction = () => {
-    emit('confirm');
-};
+const closeModal = () => emit('close');
+const confirmAction = () => emit('confirm');
 </script>
 
 <template>
@@ -43,8 +33,13 @@ const confirmAction = () => {
                     Cancelar
                 </button>
 
-                <button @click="confirmAction" class="ml-3 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none">
-                    Confirmar Eliminación
+                <!-- AHORA EL BOTÓN ES DINÁMICO -->
+                <button 
+                    @click="confirmAction" 
+                    class="ml-3 px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none"
+                    :class="confirmButtonClass"
+                >
+                    {{ confirmButtonText }}
                 </button>
             </div>
         </div>

@@ -1,8 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
-import { computed } from 'vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
+import { ref } from 'vue';
 
 const props = defineProps({
     workOrders: {
@@ -28,18 +29,41 @@ const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('es-ES', options);
 };
+
+// --- Lógica para el Modal de Eliminación ---
+const confirmingOrderDeletion = ref(false);
+const orderToDelete = ref(null);
+
+const confirmOrderDeletion = (workOrder) => {
+    orderToDelete.value = workOrder;
+    confirmingOrderDeletion.value = true;
+};
+
+const deleteOrder = () => {
+    router.delete(route('work-orders.destroy', orderToDelete.value.id), {
+        onSuccess: () => closeModal(),
+        preserveScroll: true, // Mantiene al usuario en la misma página de la paginación
+    });
+};
+
+const closeModal = () => {
+    confirmingOrderDeletion.value = false;
+    orderToDelete.value = null;
+};
 </script>
 
 <template>
+
     <Head title="Órdenes de Trabajo" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Órdenes de Trabajo</h2>
-                <Link v-if="can('gestionar ordenes de trabajo')" :href="route('dashboard')" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
-                    Crear Nueva Orden
-                </Link>
+                <!-- El botón Crear ahora es solo un placeholder, la creación se inicia desde el cliente -->
+                <p v-if="can('gestionar ordenes de trabajo')" class="text-sm text-gray-500">
+                    Para crear una orden, ve al detalle del cliente y selecciona un vehículo.
+                </p>
             </div>
         </template>
 
@@ -60,32 +84,56 @@ const formatDate = (dateString) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="workOrder in workOrders.data" :key="workOrder.id" class="bg-white border-b hover:bg-gray-50">
-                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">#{{ workOrder.id }}</th>
+                                    <tr v-for="workOrder in workOrders.data" :key="workOrder.id"
+                                        class="bg-white border-b hover:bg-gray-50">
+                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                            #{{
+                                            workOrder.id }}</th>
                                         <td class="px-6 py-4">{{ workOrder.vehicle.patente }}</td>
-                                        <td class="px-6 py-4">{{ workOrder.vehicle.cliente.nombre }} {{ workOrder.vehicle.cliente.apellido }}</td>
+                                        <td class="px-6 py-4">{{ workOrder.vehicle.cliente.nombre }} {{
+                                            workOrder.vehicle.cliente.apellido }}</td>
                                         <td class="px-6 py-4">
-                                            <span class="px-2 py-1 font-semibold leading-tight text-xs rounded-full" :class="statusClass(workOrder.status)">
+                                            <span class="px-2 py-1 font-semibold leading-tight text-xs rounded-full"
+                                                :class="statusClass(workOrder.status)">
                                                 {{ workOrder.status }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4">{{ formatDate(workOrder.entry_date) }}</td>
                                         <td class="px-6 py-4 text-right">
-                                            <Link :href="route('work-orders.show', workOrder.id)" class="font-medium text-blue-600 hover:underline mr-4">Ver Detalle</Link>
+                                            <Link :href="route('work-orders.show', workOrder.id)"
+                                                class="font-medium text-blue-600 hover:underline mr-4">Ver Detalle
+                                            </Link>
+
+                                            <!-- Botón de Eliminación Condicional -->
+                                            <button
+                                                v-if="can('gestionar ordenes de trabajo') && workOrder.status !== 'Completada'"
+                                                @click="confirmOrderDeletion(workOrder)"
+                                                class="font-medium text-red-600 hover:underline">
+                                                Eliminar
+                                            </button>
                                         </td>
                                     </tr>
                                     <tr v-if="workOrders.data.length === 0">
-                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">No se encontraron órdenes de trabajo.</td>
+                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">No se encontraron
+                                            órdenes de
+                                            trabajo.</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    <div v-if="workOrders.links.length > 3" class="p-6 border-t">
+
+                    <!-- Paginación -->
+                    <div v-if="workOrders.links.length > 3" class="mt-6">
                         <Pagination :links="workOrders.links" />
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Modal de Confirmación -->
+        <ConfirmationModal :show="confirmingOrderDeletion" @close="closeModal" @confirm="deleteOrder"
+            title="Eliminar Orden de Trabajo"
+            :message="`¿Estás seguro de que deseas eliminar la orden #${orderToDelete?.id}? Si se utilizaron productos, el stock será devuelto. Esta acción no se puede deshacer.`" />
     </AuthenticatedLayout>
 </template>

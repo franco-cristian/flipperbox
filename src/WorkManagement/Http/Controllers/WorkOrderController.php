@@ -12,6 +12,7 @@ use FlipperBox\WorkManagement\Models\WorkOrder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -56,6 +57,52 @@ class WorkOrderController extends Controller
             'services' => Service::orderBy('name')->get(['id', 'name', 'price']),
             'mechanics' => $mechanics,
         ]);
+    }
+
+    /**
+     * Actualiza el estado de una Orden de Trabajo.
+     */
+    public function update(Request $request, WorkOrder $workOrder): RedirectResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['En Progreso', 'Completada', 'Cancelada'])],
+        ]);
+
+        // Lógica de negocio para la transición de estados
+        if ($workOrder->status === 'Completada' && $validated['status'] !== 'Cancelada') {
+            return back()->with('error', 'Una orden completada solo puede ser cancelada.');
+        }
+
+        $workOrder->status = $validated['status'];
+
+        if ($validated['status'] === 'Completada') {
+            $workOrder->completion_date = now();
+        }
+
+        // Si se cancela una orden que tenía productos, devolvemos el stock.
+        if ($validated['status'] === 'Cancelada') {
+            $this->returnStock($workOrder);
+        }
+
+        $workOrder->save();
+
+        return back()->with('success', 'Estado de la orden actualizado.');
+    }
+
+    /**
+     * Elimina (Soft Delete) una Orden de Trabajo.
+     */
+    public function destroy(WorkOrder $workOrder): RedirectResponse
+    {
+        // Regla de negocio: No se puede eliminar una orden completada.
+        if ($workOrder->status === 'Completada') {
+            return to_route('work-orders.index')->with('error', 'No se puede eliminar una orden de trabajo completada.');
+        }
+
+        $this->returnStock($workOrder);
+        $workOrder->delete();
+
+        return to_route('work-orders.index')->with('success', 'Orden de trabajo eliminada exitosamente.');
     }
 
     // --- MÉTODOS PARA AÑADIR ÍTEMS ---
@@ -166,5 +213,22 @@ class WorkOrderController extends Controller
 
         $workOrder->total = $totalProducts + $totalServices + $totalExternalCosts;
         $workOrder->save();
+    }
+
+    /**
+     * Método privado para devolver el stock de una orden cancelada o eliminada.
+     */
+    private function returnStock(WorkOrder $workOrder)
+    {
+        if ($workOrder->products()->exists()) {
+            DB::transaction(function () use ($workOrder) {
+                foreach ($workOrder->products as $product) {
+                    $productInStock = Product::lockForUpdate()->find($product->id);
+                    if ($productInStock) {
+                        $productInStock->increment('current_stock', $product->pivot->quantity);
+                    }
+                }
+            });
+        }
     }
 }
