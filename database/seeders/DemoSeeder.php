@@ -42,6 +42,10 @@ class DemoSeeder extends Seeder
             'gestionar proveedores',
             'ver ordenes de trabajo',
             'gestionar ordenes de trabajo',
+            'ver cupos', 
+            'gestionar cupos', 
+            'ver reservas', 
+            'gestionar reservas',
         ];
 
         foreach ($permissions as $permission) {
