@@ -1,12 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, Link } from '@inertiajs/vue3';
 
 const form = useForm({
-    nombre: '',
+    name: '',
     apellido: '',
-    email: '',
     telefono: '',
+    email: '',
     documento_tipo: 'DNI',
     documento_valor: '',
 });
@@ -21,7 +21,10 @@ const submit = () => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Crear Nuevo Cliente</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Crear Nuevo Cliente</h2>
+                <Link :href="route('clientes.index')" class="text-sm text-gray-700 underline">&larr; Volver al listado</Link>
+            </div>
         </template>
 
         <div class="py-12">
@@ -32,9 +35,9 @@ const submit = () => {
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Campo Nombre -->
                                 <div>
-                                    <label for="nombre" class="block font-medium text-sm text-gray-700">Nombre</label>
-                                    <input id="nombre" type="text" v-model="form.nombre" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required autofocus />
-                                    <div v-if="form.errors.nombre" class="text-sm text-red-600 mt-1">{{ form.errors.nombre }}</div>
+                                    <label for="name" class="block font-medium text-sm text-gray-700">Nombre</label>
+                                    <input id="name" type="text" v-model="form.name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required autofocus />
+                                    <div v-if="form.errors.name" class="text-sm text-red-600 mt-1">{{ form.errors.name }}</div>
                                 </div>
 
                                 <!-- Campo Apellido -->
@@ -53,8 +56,8 @@ const submit = () => {
                                 
                                 <!-- Campo Email -->
                                 <div>
-                                    <label for="email" class="block font-medium text-sm text-gray-700">Email (Opcional)</label>
-                                    <input id="email" type="email" v-model="form.email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+                                    <label for="email" class="block font-medium text-sm text-gray-700">Email</label>
+                                    <input id="email" type="email" v-model="form.email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
                                     <div v-if="form.errors.email" class="text-sm text-red-600 mt-1">{{ form.errors.email }}</div>
                                 </div>
 

@@ -2,17 +2,16 @@
 
 namespace Database\Seeders;
 
-use FlipperBox\Crm\Models\Cliente;
 use FlipperBox\Crm\Models\Vehiculo;
 use FlipperBox\Inventory\Models\Product;
 use FlipperBox\Inventory\Models\Supplier;
+use FlipperBox\WorkManagement\Models\Service;
+use FlipperBox\WorkManagement\Models\WorkOrder;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
-use FlipperBox\WorkManagement\Models\Service;
-use FlipperBox\WorkManagement\Models\WorkOrder;
 
 class DemoSeeder extends Seeder
 {
@@ -42,9 +41,9 @@ class DemoSeeder extends Seeder
             'gestionar proveedores',
             'ver ordenes de trabajo',
             'gestionar ordenes de trabajo',
-            'ver cupos', 
-            'gestionar cupos', 
-            'ver reservas', 
+            'ver cupos',
+            'gestionar cupos',
+            'ver reservas',
             'gestionar reservas',
         ];
 
@@ -64,20 +63,29 @@ class DemoSeeder extends Seeder
         // --- CREACIÓN DE USUARIOS DE PRUEBA ---
         $adminUser = User::factory()->create([
             'name' => 'Administrador',
+            'apellido' => 'Flipper',
             'email' => 'admin@flipperbox.com',
         ]);
         $adminUser->assignRole($adminRole);
 
         $mecanicoUser = User::factory()->create([
-            'name' => 'Mecánico de Prueba',
+            'name' => 'Mecánico',
+            'apellido' => 'de Prueba',
             'email' => 'mecanico@flipperbox.com',
         ]);
         $mecanicoUser->assignRole($mecanicoRole);
 
-        // --- CREACIÓN DE CLIENTES Y VEHÍCULOS DE PRUEBA ---
-        Cliente::factory(50)
-            ->has(Vehiculo::factory()->count(fake()->numberBetween(1, 3)))
-            ->create();
+        // --- REFACTORIZACIÓN: CREACIÓN DE CLIENTES (COMO USUARIOS) Y VEHÍCULOS ---
+        // Creamos 50 usuarios, les asignamos el rol 'Cliente' y luego creamos sus vehículos
+        User::factory(50)
+            ->create()
+            ->each(function ($user) use ($clienteRole) {
+                $user->assignRole($clienteRole);
+                // Usamos 'make' para crear los vehículos en memoria y luego 'saveMany' para asociarlos al usuario
+                $user->vehiculos()->saveMany(
+                    Vehiculo::factory(fake()->numberBetween(1, 3))->make()
+                );
+            });
 
         // --- INVENTARIO REAL ---
         // 1. Creamos los Proveedores
@@ -85,7 +93,7 @@ class DemoSeeder extends Seeder
         $wurth = Supplier::create(['name' => 'WURTH', 'contact_person' => 'Vendedor Juan Perez']);
         $indeser = Supplier::create(['name' => 'INDESER', 'contact_person' => 'Oficina Santa Fe']);
 
-        // 2. Creamos los Productos - MODIFICACIÓN AQUÍ: calcular precio explícitamente
+        // 2. Creamos los Productos
         $productosData = [
             ['name' => 'Filtro Aceite VW Gol/Trend/Fox', 'sku' => 'J3393PA', 'cost' => 85.00, 'iva_percentage' => 21, 'profit_margin' => 40, 'current_stock' => 20, 'min_threshold' => 5, 'supplier' => $hasting, 'supplier_cost' => 80.00],
             ['name' => 'Filtro Aire Renault Logan 1.6 8v', 'sku' => 'J3605PA', 'cost' => 100.00, 'iva_percentage' => 21, 'profit_margin' => 40, 'current_stock' => 15, 'min_threshold' => 5, 'supplier' => $hasting, 'supplier_cost' => 95.00],
@@ -94,38 +102,30 @@ class DemoSeeder extends Seeder
         ];
 
         foreach ($productosData as $data) {
-            // Calcular el precio explícitamente antes de crear el producto
             $costWithIva = $data['cost'] * (1 + ($data['iva_percentage'] / 100));
             $price = $costWithIva * (1 + ($data['profit_margin'] / 100));
-
+            
             $product = Product::create([
-                'name' => $data['name'],
-                'sku' => $data['sku'],
-                'cost' => $data['cost'],
-                'iva_percentage' => $data['iva_percentage'],
-                'profit_margin' => $data['profit_margin'],
-                'price' => round($price, 2), // Precio calculado explícitamente
-                'current_stock' => $data['current_stock'],
-                'min_threshold' => $data['min_threshold'],
+                'name' => $data['name'], 'sku' => $data['sku'], 'cost' => $data['cost'], 'iva_percentage' => $data['iva_percentage'],
+                'profit_margin' => $data['profit_margin'], 'price' => round($price, 2), 'current_stock' => $data['current_stock'], 'min_threshold' => $data['min_threshold'],
             ]);
 
-            // Asociar proveedor
             if (isset($data['supplier'])) {
                 $product->suppliers()->attach($data['supplier']->id, ['cost' => $data['supplier_cost']]);
             }
         }
 
-        Service::create(['name' => 'Cambio de Aceite y Filtros', 'price' => 50.00]);
+        // --- SERVICIOS ---
+        $servicioCambioAceite = Service::create(['name' => 'Cambio de Aceite y Filtros', 'price' => 50.00]);
         Service::create(['name' => 'Diagnóstico General', 'price' => 30.00]);
         Service::create(['name' => 'Reparación de Tren Delantero', 'price' => 150.00]);
 
         // --- ÓRDENES DE TRABAJO DE PRUEBA ---
         $vehiculos = Vehiculo::all();
         $mecanico = User::where('email', 'mecanico@flipperbox.com')->first();
-        $producto1 = Product::where('sku', 'J3393PA')->first(); // Filtro Aceite
-        $servicio1 = Service::where('name', 'Cambio de Aceite y Filtros')->first();
+        $filtroAceite = Product::where('sku', 'J3393PA')->first();
 
-        if ($vehiculos->count() > 0 && $mecanico && $producto1 && $servicio1) {
+        if ($vehiculos->count() > 0 && $mecanico && $filtroAceite && $servicioCambioAceite) {
             // --- Orden Completada (con ítems) ---
             $ordenCompletada = WorkOrder::create([
                 'vehicle_id' => $vehiculos->random()->id,
@@ -135,35 +135,16 @@ class DemoSeeder extends Seeder
                 'completion_date' => now(),
             ]);
             
-            // Asociamos productos
-            $ordenCompletada->products()->attach($producto1->id, [
-                'quantity' => 1,
-                'unit_price' => $producto1->price,
-            ]);
-
-            // Asociamos servicios (mano de obra)
-            $ordenCompletada->services()->attach($servicio1->id, [
-                'price' => $servicio1->price,
-            ]);
+            $ordenCompletada->products()->attach($filtroAceite->id, ['quantity' => 1, 'unit_price' => $filtroAceite->price]);
+            $ordenCompletada->services()->attach($servicioCambioAceite->id, ['price' => $servicioCambioAceite->price]);
             
-            // Calculamos y guardamos el total
-            $total = ($producto1->price * 1) + $servicio1->price;
+            $total = ($filtroAceite->price * 1) + $servicioCambioAceite->price;
             $ordenCompletada->update(['total' => $total]);
 
             // --- Orden en Progreso ---
-            WorkOrder::create([
-                'vehicle_id' => $vehiculos->random()->id,
-                'mechanic_id' => $mecanico->id,
-                'status' => 'En Progreso',
-                'description' => 'Revisión de tren delantero, ruido al girar.',
-            ]);
-
+            WorkOrder::create(['vehicle_id' => $vehiculos->random()->id, 'mechanic_id' => $mecanico->id, 'status' => 'En Progreso', 'description' => 'Revisión de tren delantero, ruido al girar.']);
             // --- Orden Pendiente ---
-            WorkOrder::create([
-                'vehicle_id' => $vehiculos->random()->id,
-                'status' => 'Pendiente',
-                'description' => 'Falla en el arranque, posible problema eléctrico.',
-            ]);
+            WorkOrder::create(['vehicle_id' => $vehiculos->random()->id, 'status' => 'Pendiente', 'description' => 'Falla en el arranque, posible problema eléctrico.']);
         }
     }
 }

@@ -3,8 +3,8 @@
 namespace FlipperBox\Crm\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use FlipperBox\Crm\Http\Requests\UpdateVehiculoRequest;
-use FlipperBox\Crm\Models\Cliente;
 use FlipperBox\Crm\Models\Vehiculo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,15 +13,25 @@ use Inertia\Response;
 
 class VehiculoController extends Controller
 {
-    public function create(Cliente $cliente): Response
+    /**
+     * Muestra el formulario para crear un nuevo vehículo para un cliente (User).
+     */
+    public function create(User $user): Response
     {
+        abort_if(!$user->hasRole('Cliente'), 404);
+
         return Inertia::render('Crm/Vehiculos/Create', [
-            'cliente' => $cliente,
+            'cliente' => $user,
         ]);
     }
 
-    public function store(Request $request, Cliente $cliente): RedirectResponse
+    /**
+     * Almacena un nuevo vehículo y lo asocia a un cliente (User).
+     */
+    public function store(Request $request, User $user): RedirectResponse
     {
+        abort_if(!$user->hasRole('Cliente'), 404);
+        
         $validated = $request->validate([
             'patente' => ['required', 'string', 'max:255', 'unique:vehiculos,patente'],
             'marca' => ['required', 'string', 'max:255'],
@@ -32,28 +42,43 @@ class VehiculoController extends Controller
             'numero_motor' => ['nullable', 'string', 'max:255'],
             'observaciones' => ['nullable', 'string'],
         ]);
-        $cliente->vehiculos()->create($validated);
-        return to_route('clientes.show', $cliente)->with('success', 'Vehículo agregado exitosamente.');
+
+        // Creamos el vehículo a través de la relación definida en el modelo User
+        $user->vehiculos()->create($validated);
+
+        return to_route('clientes.show', $user->id)->with('success', 'Vehículo agregado exitosamente.');
     }
 
-    public function edit(Cliente $cliente, Vehiculo $vehiculo): Response
+    /**
+     * Muestra el formulario para editar un vehículo.
+     * El Model-Route Binding se encarga de que $user y $vehiculo sean los correctos.
+     */
+    public function edit(User $user, Vehiculo $vehiculo): Response
     {
+        abort_if(!$user->hasRole('Cliente'), 404);
+
         return Inertia::render('Crm/Vehiculos/Edit', [
-            'cliente' => $cliente,
+            'cliente' => $user,
             'vehiculo' => $vehiculo,
         ]);
     }
 
-    public function update(UpdateVehiculoRequest $request, Cliente $cliente, Vehiculo $vehiculo): RedirectResponse
+    /**
+     * Actualiza un vehículo existente.
+     */
+    public function update(UpdateVehiculoRequest $request, User $user, Vehiculo $vehiculo): RedirectResponse
     {
         $vehiculo->update($request->validated());
-        return to_route('clientes.show', $cliente)->with('success', 'Vehículo actualizado exitosamente.');
+        return to_route('clientes.show', $user->id)->with('success', 'Vehículo actualizado exitosamente.');
     }
 
-    public function destroy(Cliente $cliente, Vehiculo $vehiculo): RedirectResponse
+    /**
+     * Elimina (Soft Delete) un vehículo.
+     */
+    public function destroy(User $user, Vehiculo $vehiculo): RedirectResponse
     {
         $this->authorize('eliminar vehiculos');
         $vehiculo->delete();
-        return to_route('clientes.show', $cliente)->with('success', 'Vehículo eliminado exitosamente.');
+        return to_route('clientes.show', $user->id)->with('success', 'Vehículo eliminado exitosamente.');
     }
 }

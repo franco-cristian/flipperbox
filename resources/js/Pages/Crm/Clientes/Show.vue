@@ -4,7 +4,6 @@ import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import { ref } from 'vue';
 
-// Definimos las props que el controlador nos enviará
 const props = defineProps({
     cliente: {
         type: Object,
@@ -12,10 +11,8 @@ const props = defineProps({
     },
 });
 
-// Helper para verificar permisos
 const can = (permission) => usePage().props.auth.user.permissions.includes(permission);
 
-// --- Lógica para el Modal de Eliminación de Vehículo ---
 const confirmingVehicleDeletion = ref(false);
 const vehicleToDelete = ref(null);
 
@@ -25,8 +22,7 @@ const confirmVehicleDeletion = (vehiculo) => {
 };
 
 const deleteVehicle = () => {
-    // Usamos la ruta anidada, pasando ambos IDs (cliente y vehículo)
-    router.delete(route('clientes.vehiculos.destroy', { cliente: props.cliente.id, vehiculo: vehicleToDelete.value.id }), {
+    router.delete(route('clientes.vehiculos.destroy', { user: props.cliente.id, vehiculo: vehicleToDelete.value.id }), {
         onSuccess: () => closeModal(),
         preserveScroll: true,
     });
@@ -36,11 +32,10 @@ const closeModal = () => {
     confirmingVehicleDeletion.value = false;
     vehicleToDelete.value = null;
 };
-// --- Fin de la Lógica del Modal ---
 </script>
 
 <template>
-    <Head :title="`Cliente: ${cliente.nombre} ${cliente.apellido}`" />
+    <Head :title="`Cliente: ${cliente.name} ${cliente.apellido}`" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -60,7 +55,7 @@ const closeModal = () => {
                 <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                     <section>
                         <header>
-                            <h2 class="text-lg font-medium text-gray-900">{{ cliente.nombre }} {{ cliente.apellido }}</h2>
+                            <h2 class="text-lg font-medium text-gray-900">{{ cliente.name }} {{ cliente.apellido }}</h2>
                             <p class="mt-1 text-sm text-gray-600">Información de contacto y personal del cliente.</p>
                         </header>
                         <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -70,7 +65,7 @@ const closeModal = () => {
                             </div>
                             <div>
                                 <span class="font-bold text-gray-700">Teléfono:</span>
-                                <span class="ml-2 text-gray-900">{{ cliente.telefono }}</span>
+                                <span class="ml-2 text-gray-900">{{ cliente.telefono || 'No especificado' }}</span>
                             </div>
                             <div>
                                 <span class="font-bold text-gray-700">Documento:</span>
@@ -88,7 +83,7 @@ const closeModal = () => {
                                 <h2 class="text-lg font-medium text-gray-900">Vehículos Registrados</h2>
                                 <p class="mt-1 text-sm text-gray-600">Listado de vehículos asociados a este cliente.</p>
                             </div>
-                            <Link v-if="can('crear vehiculos')" :href="route('clientes.vehiculos.create', cliente.id)" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
+                            <Link v-if="can('crear vehiculos')" :href="route('clientes.vehiculos.create', { user: cliente.id })" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
                                 Agregar Vehículo
                             </Link>
                         </header>
@@ -110,8 +105,8 @@ const closeModal = () => {
                                         <td class="px-6 py-4">{{ vehiculo.modelo }}</td>
                                         <td class="px-6 py-4">{{ vehiculo.anio }}</td>
                                         <td class="px-6 py-4 text-right">
-                                        <Link :href="route('work-orders.create', { vehiculo: vehiculo.id })" class="font-medium text-green-600 hover:underline mr-4">Crear Orden de Trabajo</Link>
-                                            <Link v-if="can('editar vehiculos')" :href="route('clientes.vehiculos.edit', { cliente: cliente.id, vehiculo: vehiculo.id })" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
+                                            <Link :href="route('work-orders.create', { vehiculo: vehiculo.id })" class="font-medium text-green-600 hover:underline mr-4">Crear OT</Link>
+                                            <Link v-if="can('editar vehiculos')" :href="route('clientes.vehiculos.edit', { user: cliente.id, vehiculo: vehiculo.id })" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
                                             <button v-if="can('eliminar vehiculos')" @click="confirmVehicleDeletion(vehiculo)" class="font-medium text-red-600 hover:underline">Eliminar</button>
                                         </td>
                                     </tr>

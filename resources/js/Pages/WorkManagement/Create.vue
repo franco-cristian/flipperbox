@@ -24,7 +24,7 @@ const submit = () => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Nueva Orden de Trabajo</h2>
-                <Link :href="route('clientes.show', vehiculo.cliente_id)" class="text-sm text-gray-700 underline">
+                <Link :href="route('clientes.show', { user: vehiculo.user_id })" class="text-sm text-gray-700 underline">
                     &larr; Volver al Cliente
                 </Link>
             </div>
@@ -35,7 +35,7 @@ const submit = () => {
                     <div class="p-6 bg-white border-b border-gray-200">
                         <div class="mb-6 p-4 border rounded-md">
                             <h3 class="font-bold text-lg">Vehículo Seleccionado</h3>
-                            <p class="text-sm text-gray-600">Cliente: {{ vehiculo.cliente.nombre }} {{ vehiculo.cliente.apellido }}</p>
+                            <p class="text-sm text-gray-600">Cliente: {{ vehiculo.cliente.name }} {{ vehiculo.cliente.apellido }}</p>
                             <p class="text-sm text-gray-600">Patente: {{ vehiculo.patente }}</p>
                             <p class="text-sm text-gray-600">Modelo: {{ vehiculo.marca }} {{ vehiculo.modelo }} ({{ vehiculo.anio }})</p>
                         </div>

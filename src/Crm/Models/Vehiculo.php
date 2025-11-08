@@ -2,6 +2,7 @@
 
 namespace FlipperBox\Crm\Models;
 
+use App\Models\User; 
 use Database\Factories\VehiculoFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,7 +34,7 @@ class Vehiculo extends Model
      */
     public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**
