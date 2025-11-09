@@ -20,7 +20,7 @@ class WorkOrder extends Model
 
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehiculo::class);
+        return $this->belongsTo(Vehiculo::class, 'vehicle_id')->withTrashed();
     }
 
     public function mechanic(): BelongsTo
@@ -32,7 +32,8 @@ class WorkOrder extends Model
     {
         return $this->belongsToMany(Product::class, 'work_order_product')
             ->withPivot('quantity', 'unit_price')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->withTrashed();
     }
 
     public function services(): BelongsToMany

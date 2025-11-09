@@ -159,7 +159,11 @@ const closeModal = () => confirmingAction.value = false;
                         <table v-if="workOrder.products && workOrder.products.length > 0" class="w-full text-sm">
                             <tbody>
                                 <tr v-for="product in workOrder.products" :key="`prod-${product.id}`" class="border-b">
-                                    <td class="py-2">{{ product.name }}</td>
+                                    <td class="py-2">
+                                        {{ product.name }}
+                                        <span v-if="product.deleted_at"
+                                            class="ml-2 text-xs text-red-500 bg-red-100 px-2 py-1 rounded-full">Archivado</span>
+                                    </td>
                                     <td class="py-2 text-center">{{ product.pivot.quantity }} x ${{
                                         product.pivot.unit_price }}
                                     </td>
@@ -276,7 +280,7 @@ const closeModal = () => confirmingAction.value = false;
                                 <option :value="null">Sin asignar</option>
                                 <option v-for="mechanic in mechanics" :key="mechanic.id" :value="mechanic.id">{{
                                     mechanic.name
-                                }}</option>
+                                    }}</option>
                             </select></form>
                         <p class="text-sm mt-4"><strong>Estado Actual: </strong><span
                                 class="px-2 py-1 font-semibold leading-tight text-xs rounded-full"

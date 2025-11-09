@@ -10,6 +10,7 @@ use FlipperBox\Inventory\Http\Requests\UpdateProductRequest;
 use FlipperBox\Inventory\Models\Product;
 use FlipperBox\Inventory\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,7 +55,12 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        $product->delete(); // Usamos Soft Delete
+        try {
+            // Esto disparará el Observer. Si falla, el catch lo manejará.
+            $product->delete();
+        } catch (ValidationException $e) {
+            return back()->with('error', $e->validator->errors()->first('error'));
+        }
         return to_route('inventario.products.index')->with('success', 'Producto eliminado exitosamente.');
     }
 }

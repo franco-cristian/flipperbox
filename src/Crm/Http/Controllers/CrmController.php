@@ -8,14 +8,12 @@ use FlipperBox\Crm\Actions\CreateUserAsClientAction;
 use FlipperBox\Crm\Http\Requests\StoreUserAsClientRequest;
 use FlipperBox\Crm\Http\Requests\UpdateUserAsClientRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CrmController extends Controller
 {
-    /**
-     * Muestra una lista paginada de usuarios con el rol 'Cliente'.
-     */
     public function index(): Response
     {
         return Inertia::render('Crm/Clientes/Index', [
@@ -23,67 +21,60 @@ class CrmController extends Controller
         ]);
     }
 
-    /**
-     * Muestra el formulario para crear un nuevo cliente.
-     */
     public function create(): Response
     {
         return Inertia::render('Crm/Clientes/Create');
     }
 
-    /**
-     * Almacena un nuevo usuario con el rol 'Cliente'.
-     */
     public function store(StoreUserAsClientRequest $request, CreateUserAsClientAction $createUserAsClient): RedirectResponse
     {
         $createUserAsClient->execute($request->validated());
         return to_route('clientes.index')->with('success', 'Cliente creado exitosamente.');
     }
 
-    /**
-     * Muestra el detalle de un cliente, incluyendo sus vehículos.
-     */
     public function show(User $user): Response
     {
-        // Verificamos que el usuario solicitado sea realmente un cliente
         abort_if(!$user->hasRole('Cliente'), 404);
-
         $user->load('vehiculos');
         return Inertia::render('Crm/Clientes/Show', [
             'cliente' => $user,
         ]);
     }
 
-    /**
-     * Muestra el formulario para editar un cliente.
-     */
     public function edit(User $user): Response
     {
         abort_if(!$user->hasRole('Cliente'), 404);
-
         return Inertia::render('Crm/Clientes/Edit', [
             'cliente' => $user,
         ]);
     }
 
-    /**
-     * Actualiza la información de un cliente.
-     */
     public function update(UpdateUserAsClientRequest $request, User $user): RedirectResponse
     {
         $user->update($request->validated());
         return to_route('clientes.index')->with('success', 'Cliente actualizado exitosamente.');
     }
 
-    /**
-     * Elimina un cliente.
-     * En este caso, eliminar a un cliente significa eliminar el usuario.
-     * Soft Deletes.
-     */
     public function destroy(User $user): RedirectResponse
     {
-        // Podríamos añadir una validación para no permitir borrar usuarios con vehículos/órdenes activas
-        $user->delete();
+        // 1. Verificación de Rol explícita
+        if (!$user->hasRole('Cliente')) {
+            return back()->with('error', 'La acción de eliminación solo es aplicable a usuarios con el rol de Cliente.');
+        }
+
+        // 2. Verificación de Regla de Negocio explícita
+        if ($user->vehiculos()->whereHas('workOrders')->exists()) {
+            return back()->with('error', 'No se puede eliminar este cliente porque tiene órdenes de trabajo asociadas. Por favor, gestione esas órdenes primero.');
+        }
+
+        // Si pasa las validaciones, procedemos a eliminar
+        try {
+            $user->delete();
+        } catch (ValidationException $e) {
+            // El catch se mantiene como una segunda capa de seguridad por si un Observer lanza una excepción
+            return back()->with('error', $e->validator->errors()->first('error'));
+        }
+        
         return to_route('clientes.index')->with('success', 'Cliente eliminado exitosamente.');
     }
 }

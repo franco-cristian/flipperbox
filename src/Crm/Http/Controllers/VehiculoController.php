@@ -8,6 +8,7 @@ use FlipperBox\Crm\Http\Requests\UpdateVehiculoRequest;
 use FlipperBox\Crm\Models\Vehiculo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,12 +32,12 @@ class VehiculoController extends Controller
     public function store(Request $request, User $user): RedirectResponse
     {
         abort_if(!$user->hasRole('Cliente'), 404);
-        
+
         $validated = $request->validate([
             'patente' => ['required', 'string', 'max:255', 'unique:vehiculos,patente'],
             'marca' => ['required', 'string', 'max:255'],
             'modelo' => ['required', 'string', 'max:255'],
-            'anio' => ['required', 'integer', 'min:1950', 'max:'.date('Y')],
+            'anio' => ['required', 'integer', 'min:1950', 'max:' . date('Y')],
             'kilometraje' => ['nullable', 'integer', 'min:0'],
             'vin' => ['nullable', 'string', 'max:255', 'unique:vehiculos,vin'],
             'numero_motor' => ['nullable', 'string', 'max:255'],
@@ -77,8 +78,11 @@ class VehiculoController extends Controller
      */
     public function destroy(User $user, Vehiculo $vehiculo): RedirectResponse
     {
-        $this->authorize('eliminar vehiculos');
-        $vehiculo->delete();
+        try {
+            $vehiculo->delete();
+        } catch (ValidationException $e) {
+            return back()->with('error', $e->validator->errors()->first());
+        }
         return to_route('clientes.show', $user->id)->with('success', 'Vehículo eliminado exitosamente.');
     }
 }

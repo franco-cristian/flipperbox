@@ -88,8 +88,12 @@ const closeModal = () => {
                                         class="bg-white border-b hover:bg-gray-50">
                                         <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                             #{{
-                                            workOrder.id }}</th>
-                                        <td class="px-6 py-4">{{ workOrder.vehicle.patente }}</td>
+                                                workOrder.id }}</th>
+                                        <td class="px-6 py-4">
+                                            {{ workOrder.vehicle.patente }}
+                                            <span v-if="workOrder.vehicle.deleted_at"
+                                                class="ml-2 text-xs text-red-500 bg-red-100 px-2 py-1 rounded-full">Archivado</span>
+                                        </td>
                                         <td class="px-6 py-4">{{ workOrder.vehicle.cliente.nombre }} {{
                                             workOrder.vehicle.cliente.apellido }}</td>
                                         <td class="px-6 py-4">

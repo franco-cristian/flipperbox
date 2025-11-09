@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,12 +21,14 @@ class WorkOrderController extends Controller
 {
     public function index(): Response
     {
+        // La relación 'vehicle.cliente' ahora es 'vehicle.user' debido a la refactorización
         $workOrders = WorkOrder::with(['vehicle.cliente', 'mechanic'])->latest('entry_date')->paginate(15);
         return Inertia::render('WorkManagement/Index', ['workOrders' => $workOrders]);
     }
 
     public function create(Vehiculo $vehiculo): Response
     {
+        // La relación 'cliente' ahora es 'user'
         return Inertia::render('WorkManagement/Create', ['vehiculo' => $vehiculo->load('cliente')]);
     }
 
@@ -38,21 +41,11 @@ class WorkOrderController extends Controller
 
     public function show(WorkOrder $workOrder): Response
     {
-        $freshWorkOrder = WorkOrder::with([
-            'vehicle.cliente',
-            'mechanic',
-            'products',
-            'services',
-            'externalCosts'
-        ])->findOrFail($workOrder->id);
-
-        logger('External Costs count: ' . $workOrder->externalCosts->count());
-        logger('External Costs: ' . json_encode($workOrder->externalCosts));
-
+        $workOrder->load(['vehicle.cliente', 'mechanic', 'products', 'services', 'externalCosts']);
         $mechanics = User::role('Mecanico')->orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('WorkManagement/Show', [
-            'workOrder' => $freshWorkOrder,
+            'workOrder' => $workOrder,
             'products' => Product::orderBy('name')->get(['id', 'name', 'price', 'current_stock']),
             'services' => Service::orderBy('name')->get(['id', 'name', 'price']),
             'mechanics' => $mechanics,
@@ -68,20 +61,21 @@ class WorkOrderController extends Controller
             'status' => ['required', Rule::in(['En Progreso', 'Completada', 'Cancelada'])],
         ]);
 
-        // Lógica de negocio para la transición de estados
         if ($workOrder->status === 'Completada' && $validated['status'] !== 'Cancelada') {
             return back()->with('error', 'Una orden completada solo puede ser cancelada.');
         }
 
+        $originalStatus = $workOrder->status;
         $workOrder->status = $validated['status'];
 
         if ($validated['status'] === 'Completada') {
             $workOrder->completion_date = now();
         }
 
-        // Si se cancela una orden que tenía productos, devolvemos el stock.
-        if ($validated['status'] === 'Cancelada') {
-            $this->returnStock($workOrder);
+        // Si se cancela una orden que tenía productos, el Observer se encargará de devolver el stock.
+        if ($originalStatus !== 'Cancelada' && $validated['status'] === 'Cancelada') {
+            // La lógica de devolución de stock se ha movido al WorkOrderObserver en el evento 'updating'.
+            // Aquí solo guardamos el cambio de estado.
         }
 
         $workOrder->save();
@@ -94,13 +88,11 @@ class WorkOrderController extends Controller
      */
     public function destroy(WorkOrder $workOrder): RedirectResponse
     {
-        // Regla de negocio: No se puede eliminar una orden completada.
         if ($workOrder->status === 'Completada') {
             return to_route('work-orders.index')->with('error', 'No se puede eliminar una orden de trabajo completada.');
         }
 
-        $this->returnStock($workOrder);
-        $workOrder->delete();
+        $workOrder->delete(); // El Observer se encargará de devolver el stock
 
         return to_route('work-orders.index')->with('success', 'Orden de trabajo eliminada exitosamente.');
     }
@@ -112,7 +104,7 @@ class WorkOrderController extends Controller
         DB::transaction(function () use ($validated, $workOrder) {
             $product = Product::lockForUpdate()->find($validated['product_id']);
             if ($product->current_stock < $validated['quantity']) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['quantity' => 'Stock insuficiente. Stock actual: ' . $product->current_stock]);
+                throw ValidationException::withMessages(['quantity' => 'Stock insuficiente. Stock actual: ' . $product->current_stock]);
             }
             $product->decrement('current_stock', $validated['quantity']);
             $existingProduct = $workOrder->products()->where('product_id', $product->id)->first();
@@ -145,14 +137,9 @@ class WorkOrderController extends Controller
             'cost' => ['required', 'numeric', 'min:0'],
             'price' => ['required', 'numeric', 'min:0']
         ]);
-
-        // Crear el costo externo
         $workOrder->externalCosts()->create($validated);
-
-        // Recargar la relación externalCosts antes de recalcular
         $workOrder->load('externalCosts');
         $this->recalculateTotal($workOrder);
-
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Costo externo agregado.');
     }
 
@@ -193,42 +180,19 @@ class WorkOrderController extends Controller
     {
         $workOrder = $externalCost->workOrder;
         $externalCost->delete();
-
-        // Recargar la relación externalCosts antes de recalcular
         $workOrder->load('externalCosts');
         $this->recalculateTotal($workOrder);
-
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Costo externo eliminado de la orden.');
     }
 
     // --- MÉTODO PRIVADO PARA RECALCULAR TOTALES ---
     private function recalculateTotal(WorkOrder $workOrder)
     {
-        // Asegurarnos de que todas las relaciones estén cargadas
         $workOrder->load(['products', 'services', 'externalCosts']);
-
         $totalProducts = $workOrder->products->sum(fn($p) => $p->pivot->unit_price * $p->pivot->quantity);
         $totalServices = $workOrder->services->sum('pivot.price');
         $totalExternalCosts = $workOrder->externalCosts->sum('price');
-
         $workOrder->total = $totalProducts + $totalServices + $totalExternalCosts;
         $workOrder->save();
-    }
-
-    /**
-     * Método privado para devolver el stock de una orden cancelada o eliminada.
-     */
-    private function returnStock(WorkOrder $workOrder)
-    {
-        if ($workOrder->products()->exists()) {
-            DB::transaction(function () use ($workOrder) {
-                foreach ($workOrder->products as $product) {
-                    $productInStock = Product::lockForUpdate()->find($product->id);
-                    if ($productInStock) {
-                        $productInStock->increment('current_stock', $product->pivot->quantity);
-                    }
-                }
-            });
-        }
     }
 }

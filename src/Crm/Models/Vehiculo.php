@@ -47,6 +47,6 @@ class Vehiculo extends Model
 
     public function workOrders(): HasMany
     {
-        return $this->hasMany(WorkOrder::class);
+        return $this->hasMany(WorkOrder::class, 'vehicle_id'); 
     }
 }
