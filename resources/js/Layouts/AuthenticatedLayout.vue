@@ -17,6 +17,7 @@ const navigationLinks = ref([
     { name: 'Proveedores', routeName: 'inventario.suppliers.index', permission: 'ver proveedores' },
     { name: 'Órdenes de Trabajo', routeName: 'work-orders.index', permission: 'ver ordenes de trabajo' },
     { name: 'Gestión de Cupos', routeName: 'admin.scheduling.capacities.index', permission: 'gestionar cupos' },
+    { name: 'Mis Vehículos', routeName: 'cliente.vehiculos.index', permission: 'ver mis vehiculos' },
 ]);
 
 const can = (permission) => {

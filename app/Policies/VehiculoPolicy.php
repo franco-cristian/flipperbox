@@ -8,63 +8,59 @@ use FlipperBox\Crm\Models\Vehiculo;
 class VehiculoPolicy
 {
     /**
-     * Determine whether the user can view any models.
-     * Un usuario puede ver la lista si es un cliente.
+     * Realiza una verificación "antes" de cualquier otro método.
+     * Si el usuario es un Admin, se le concede acceso total inmediatamente.
+     */
+    public function before(User $user, string $ability): bool|null
+    {
+        if ($user->hasRole('Admin')) {
+            return true;
+        }
+        return null; // Dejar que las otras reglas decidan
+    }
+
+    /**
+     * Determina si el usuario puede ver la lista de sus vehículos.
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('Cliente');
+        // Verificamos el permiso explícito que creamos para el rol 'Cliente'.
+        return $user->can('ver mis vehiculos');
     }
 
     /**
-     * Determine whether the user can view the model.
-     * Un usuario puede ver un vehículo si es SU vehículo.
+     * Determina si el usuario puede ver un vehículo específico.
      */
     public function view(User $user, Vehiculo $vehiculo): bool
     {
+        // Un usuario puede ver un vehículo si es SU vehículo.
         return $user->id === $vehiculo->user_id;
     }
 
     /**
-     * Determine whether the user can create models.
-     * Un usuario puede crear vehículos si es un cliente.
+     * Determina si el usuario puede crear vehículos.
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('Cliente');
+        // Cualquier usuario con permiso para ver la lista, puede crear.
+        return $user->can('ver mis vehiculos');
     }
 
     /**
-     * Determine whether the user can update the model.
-     * Un usuario puede actualizar un vehículo si es SU vehículo.
+     * Determina si el usuario puede actualizar un vehículo.
      */
     public function update(User $user, Vehiculo $vehiculo): bool
     {
+        // Un usuario puede actualizar un vehículo si es SU vehículo.
         return $user->id === $vehiculo->user_id;
     }
 
     /**
-     * Determine whether the user can delete the model.
-     * Un usuario puede eliminar un vehículo si es SU vehículo.
+     * Determina si el usuario puede eliminar un vehículo.
      */
     public function delete(User $user, Vehiculo $vehiculo): bool
     {
+        // Un usuario puede eliminar un vehículo si es SU vehículo.
         return $user->id === $vehiculo->user_id;
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, Vehiculo $vehiculo): bool
-    {
-        return $user->id === $vehiculo->user_id;
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, Vehiculo $vehiculo): bool
-    {
-        return false; // Nadie puede borrar permanentemente por ahora.
     }
 }

@@ -45,6 +45,7 @@ class DemoSeeder extends Seeder
             'gestionar cupos',
             'ver reservas',
             'gestionar reservas',
+            'ver mis vehiculos',
         ];
 
         foreach ($permissions as $permission) {
@@ -59,7 +60,8 @@ class DemoSeeder extends Seeder
         // --- ASIGNACIÓN DE PERMISOS A ROLES ---
         $adminRole->givePermissionTo(Permission::all());
         $mecanicoRole->givePermissionTo(['ver clientes', 'ver inventario', 'ver ordenes de trabajo', 'gestionar ordenes de trabajo']);
-
+        // --- ASIGNACIÓN AL ROL CLIENTE ---
+        $clienteRole->givePermissionTo('ver mis vehiculos');
         // --- CREACIÓN DE USUARIOS DE PRUEBA ---
         $adminUser = User::factory()->create([
             'name' => 'Administrador',

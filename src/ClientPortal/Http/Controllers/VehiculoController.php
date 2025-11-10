@@ -13,18 +13,11 @@ use Inertia\Response;
 
 class VehiculoController extends Controller
 {
-    public function __construct()
-    {
-        $this->authorizeResource(Vehiculo::class, 'vehiculo');
-    }
-
     public function index(): Response
     {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        
-        $vehiculos = $user->vehiculos()->latest()->paginate(10);
-        
+        $this->authorize('viewAny', Vehiculo::class);
+
+        $vehiculos = Auth::user()->vehiculos()->latest()->paginate(10);
         return Inertia::render('ClientPortal/Vehicles/Index', [
             'vehiculos' => $vehiculos,
         ]);
@@ -32,11 +25,14 @@ class VehiculoController extends Controller
 
     public function create(): Response
     {
+        $this->authorize('create', Vehiculo::class);
         return Inertia::render('ClientPortal/Vehicles/Create');
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', Vehiculo::class);
+
         $validated = $request->validate([
             'patente' => ['required', 'string', 'max:255', 'unique:vehiculos,patente'],
             'marca' => ['required', 'string', 'max:255'],
@@ -45,16 +41,15 @@ class VehiculoController extends Controller
             'kilometraje' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        $user->vehiculos()->create($validated);
+        Auth::user()->vehiculos()->create($validated);
 
         return to_route('cliente.vehiculos.index')->with('success', 'Vehículo agregado exitosamente.');
     }
 
     public function edit(Vehiculo $vehiculo): Response
     {
+        $this->authorize('update', $vehiculo);
+
         return Inertia::render('ClientPortal/Vehicles/Edit', [
             'vehiculo' => $vehiculo,
         ]);
@@ -62,6 +57,8 @@ class VehiculoController extends Controller
 
     public function update(Request $request, Vehiculo $vehiculo): RedirectResponse
     {
+        $this->authorize('update', $vehiculo);
+
         $validated = $request->validate([
             'patente' => ['required', 'string', 'max:255', Rule::unique('vehiculos', 'patente')->ignore($vehiculo->id)],
             'marca' => ['required', 'string', 'max:255'],
@@ -76,6 +73,8 @@ class VehiculoController extends Controller
 
     public function destroy(Vehiculo $vehiculo): RedirectResponse
     {
+        $this->authorize('delete', $vehiculo);
+
         $vehiculo->delete();
         return to_route('cliente.vehiculos.index')->with('success', 'Vehículo eliminado exitosamente.');
     }
