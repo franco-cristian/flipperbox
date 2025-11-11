@@ -35,6 +35,7 @@
             "FlipperBox\\Inventory\\": "src/Inventory/",
             "FlipperBox\\WorkManagement\\": "src/WorkManagement/",
             "FlipperBox\\Scheduling\\": "src/Scheduling/",
+            "FlipperBox\\ClientScheduling\\": "src/ClientScheduling/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }

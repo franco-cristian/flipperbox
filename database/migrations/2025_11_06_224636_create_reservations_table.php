@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('vehicle_id')->constrained('vehiculos')->onDelete('cascade');
             $table->date('reservation_date');
-            $table->enum('status', ['Pendiente', 'Confirmada', 'Cancelada'])->default('Pendiente');
+            $table->enum('status', ['Confirmada', 'Cancelada', 'Asistió', 'Ausente'])->default('Confirmada');
             $table->text('notes')->nullable()->comment('Notas del cliente al solicitar');
             $table->timestamps();
         });

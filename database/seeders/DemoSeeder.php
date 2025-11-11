@@ -46,6 +46,7 @@ class DemoSeeder extends Seeder
             'ver reservas',
             'gestionar reservas',
             'ver mis vehiculos',
+            'solicitar reserva',
         ];
 
         foreach ($permissions as $permission) {
@@ -58,10 +59,22 @@ class DemoSeeder extends Seeder
         $clienteRole = Role::create(['name' => 'Cliente', 'guard_name' => $guard]);
 
         // --- ASIGNACIÓN DE PERMISOS A ROLES ---
-        $adminRole->givePermissionTo(Permission::all());
-        $mecanicoRole->givePermissionTo(['ver clientes', 'ver inventario', 'ver ordenes de trabajo', 'gestionar ordenes de trabajo']);
-        // --- ASIGNACIÓN AL ROL CLIENTE ---
-        $clienteRole->givePermissionTo('ver mis vehiculos');
+        
+        // Usamos Permission::all() y luego removemos los permisos del cliente
+        $todosLosPermisos = Permission::all();
+        
+        // Admin: todos los permisos EXCEPTO los del cliente
+        $permisosAdmin = $todosLosPermisos->reject(function ($permiso) {
+            return in_array($permiso->name, ['ver mis vehiculos', 'solicitar reserva']);
+        });
+        $adminRole->givePermissionTo($permisosAdmin);
+
+        // Mecánico: permisos específicos
+        $mecanicoRole->givePermissionTo(['ver clientes', 'ver inventario', 'ver ordenes de trabajo']);
+        
+        // Cliente: solo sus permisos específicos
+        $clienteRole->givePermissionTo(['ver mis vehiculos', 'solicitar reserva']);
+
         // --- CREACIÓN DE USUARIOS DE PRUEBA ---
         $adminUser = User::factory()->create([
             'name' => 'Administrador',
@@ -78,12 +91,10 @@ class DemoSeeder extends Seeder
         $mecanicoUser->assignRole($mecanicoRole);
 
         // --- REFACTORIZACIÓN: CREACIÓN DE CLIENTES (COMO USUARIOS) Y VEHÍCULOS ---
-        // Creamos 50 usuarios, les asignamos el rol 'Cliente' y luego creamos sus vehículos
         User::factory(50)
             ->create()
             ->each(function ($user) use ($clienteRole) {
                 $user->assignRole($clienteRole);
-                // Usamos 'make' para crear los vehículos en memoria y luego 'saveMany' para asociarlos al usuario
                 $user->vehiculos()->saveMany(
                     Vehiculo::factory(fake()->numberBetween(1, 3))->make()
                 );

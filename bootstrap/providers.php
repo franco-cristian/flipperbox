@@ -3,6 +3,7 @@
 return [
     App\Providers\AppServiceProvider::class,
     App\Providers\PolicyServiceProvider::class,
+    FlipperBox\ClientScheduling\Providers\ClientSchedulingServiceProvider::class,
     FlipperBox\ClientPortal\Providers\ClientPortalServiceProvider::class,
     FlipperBox\Core\Providers\CoreServiceProvider::class,
     FlipperBox\Crm\Providers\CrmServiceProvider::class,
