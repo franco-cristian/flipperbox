@@ -13,6 +13,7 @@ const navigationLinks = ref([
     { name: 'Gestión de Cupos', href: route('admin.scheduling.capacities.index'), permission: 'gestionar cupos' },
     { name: 'Mis Vehículos', href: route('cliente.vehiculos.index'), permission: 'ver mis vehiculos' },
     { name: 'Solicitar Reserva', href: route('cliente.reservations.index'), permission: 'solicitar reserva' },
+    { name: 'Gestión de Reservas', href: route('admin.scheduling.reservations.index'), permission: 'gestionar reservas' },
 ]);
 
 // Creamos una función helper para verificar permisos
