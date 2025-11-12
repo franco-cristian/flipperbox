@@ -19,6 +19,7 @@ const navigationLinks = ref([
     { name: 'Gestión de Cupos', routeName: 'admin.scheduling.capacities.index', permission: 'gestionar cupos' },
     { name: 'Mis Vehículos', routeName: 'cliente.vehiculos.index', permission: 'ver mis vehiculos' },
     { name: 'Solicitar Reserva', routeName: 'cliente.reservations.index', permission: 'solicitar reserva' },
+    { name: 'Gestión de Reservas', routeName: 'admin.scheduling.reservations.index', permission: 'gestionar reservas' },
 ]);
 
 const can = (permission) => {
