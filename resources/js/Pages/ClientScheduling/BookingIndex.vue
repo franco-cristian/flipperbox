@@ -1,3 +1,4 @@
+<!-- Archivo: resources/js/Pages/ClientScheduling/BookingIndex.vue -->
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
@@ -17,38 +18,40 @@ const showCancelModal = ref(false);
 const selectedDay = ref(null);
 const reservationToCancel = ref(null);
 
-// SOLO para UX - mostrar qué vehículos tienen reservas activas
+// --- NUEVAS PROPIEDADES COMPUTADAS PARA SEPARAR RESERVAS ---
+const upcomingReservations = computed(() => 
+    props.userReservations.filter(r => r.status === 'Confirmada')
+);
+
+const pastReservations = computed(() => 
+    props.userReservations.filter(r => r.status !== 'Confirmada')
+);
+
+// SOLO para UX - mostrar qué vehículos tienen reservas activas - CORREGIDO: solo confirmadas
 const vehiclesWithActiveReservations = computed(() => {
     if (!props.userReservations || !props.vehicles) return new Set();
-    return new Set(props.userReservations.map(r => r.vehicle_id));
+    // FILTRAR SOLO RESERVAS CONFIRMADAS
+    const confirmedReservations = props.userReservations.filter(r => r.status === 'Confirmada');
+    return new Set(confirmedReservations.map(r => r.vehicle_id));
 });
 
-// Función para formatear fechas de ISO a dd-mm-aaaa
+// Función para formatear fechas de ISO a dd-mm-aaaa - CORREGIDA
 const formatDisplayDate = (dateString) => {
     if (!dateString) return '';
     
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
-        
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        
-        return `${day}-${month}-${year}`;
-    } catch (error) {
-        console.error('Error formateando fecha:', error);
-        return dateString;
-    }
+    // Parsear directamente desde YYYY-MM-DD sin usar Date
+    const [year, month, day] = dateString.split('-');
+    return `${day}-${month}-${year}`;
 };
 
-// Función para formatear la fecha seleccionada en el modal
+// Función para formatear la fecha seleccionada en el modal - CORREGIDA
 const formatSelectedDate = (dateString) => {
     if (!dateString) return '';
     
     try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
+        // Parsear desde YYYY-MM-DD
+        const [year, month, day] = dateString.split('-');
+        const date = new Date(year, month - 1, day); // Crear fecha en hora local
         
         return date.toLocaleDateString('es-ES', { 
             weekday: 'long', 
@@ -95,19 +98,19 @@ const firstDayOfMonth = computed(() => {
     return day === 0 ? 6 : day - 1;
 });
 
-// SOLO para UX - mostrar información visual
+// SOLO para UX - mostrar información visual - CORREGIDA: solo reservas confirmadas
 const getDayInfo = (day) => {
+    const dateStr = `${props.currentYear}-${String(props.currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    // Crear fecha local para comparación (sin problemas de timezone)
     const date = new Date(props.currentYear, props.currentMonth - 1, day);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const dateStr = `${props.currentYear}-${String(props.currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-    // Verificar si el usuario tiene reserva para este día (SOLO visual)
+    // Verificar si el usuario tiene reserva CONFIRMADA para este día - FILTRAR SOLO CONFIRMADAS
     const userReservationForThisDay = props.userReservations?.find(r => {
-        const reservationDate = new Date(r.reservation_date);
-        const compareDate = new Date(props.currentYear, props.currentMonth - 1, day);
-        return reservationDate.toDateString() === compareDate.toDateString();
+        // Comparar directamente los strings YYYY-MM-DD y SOLO reservas confirmadas
+        return r.reservation_date === dateStr && r.status === 'Confirmada';
     });
     
     if (userReservationForThisDay) {
@@ -122,6 +125,7 @@ const getDayInfo = (day) => {
         };
     }
 
+    // Verificar si es una fecha pasada - COMPARACIÓN CORREGIDA
     if (date < today) {
         return { 
             isPast: true, 
@@ -227,71 +231,110 @@ const changeMonth = (offset) => {
                 </div>
                 
                 <!-- CASO 2: USUARIO CON VEHÍCULOS -->
-                <div v-else class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <!-- Información sobre reservas activas (SOLO informativo) -->
-                        <div v-if="userReservations && userReservations.length > 0" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <h4 class="font-semibold text-blue-800 mb-2">Tus Reservas Activas</h4>
-                            <div v-for="reservation in userReservations" :key="reservation.id" class="text-sm text-blue-700 mb-2 last:mb-0">
-                                <div class="flex justify-between items-center">
+                <div v-else class="space-y-6">
+                    <!-- SECCIÓN DE PRÓXIMAS RESERVAS -->
+                    <div v-if="upcomingReservations.length > 0" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Mis Próximas Reservas</h3>
+                            <div class="space-y-2">
+                                <div v-for="reservation in upcomingReservations" :key="reservation.id" class="text-sm text-gray-700 p-3 bg-blue-50 rounded-md flex justify-between items-center">
                                     <div>
-                                        • {{ formatDisplayDate(reservation.reservation_date) }} - 
+                                        <strong>{{ formatDisplayDate(reservation.reservation_date) }}</strong> - 
                                         {{ vehicles.find(v => v.id === reservation.vehicle_id)?.marca }} 
-                                        {{ vehicles.find(v => v.id === reservation.vehicle_id)?.modelo }}
                                         ({{ vehicles.find(v => v.id === reservation.vehicle_id)?.patente }})
                                     </div>
-                                    <div class="flex items-center space-x-2">
-                                        <span v-if="!reservation.can_cancel" 
-                                              class="text-xs text-orange-600 italic"
-                                              :title="getCancelInfo(reservation).message">
-                                            ⚠️ No cancelable
-                                        </span>
-                                        <button 
-                                            v-if="reservation.can_cancel"
-                                            @click="openCancelModal(reservation.id, $event)"
-                                            class="text-red-600 hover:text-red-800 text-xs font-medium px-2 py-1 border border-red-300 rounded hover:bg-red-50 transition"
-                                            title="Cancelar esta reserva">
-                                            Cancelar
-                                        </button>
+                                    <button 
+                                        v-if="reservation.can_cancel"
+                                        @click="openCancelModal(reservation.id, $event)"
+                                        class="text-red-600 hover:text-red-800 text-xs font-medium px-2 py-1 border border-red-300 rounded hover:bg-red-50 transition"
+                                        title="Cancelar esta reserva">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DEL CALENDARIO -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Solicitar Nueva Reserva</h3>
+                            
+                            <div class="flex justify-between items-center mb-4">
+                                <button @click="changeMonth(-1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">&lt;</button>
+                                <h3 class="text-lg font-semibold">{{ displayMonth }} {{ displayYear }}</h3>
+                                <button @click="changeMonth(1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">&gt;</button>
+                            </div>
+                            <div class="grid grid-cols-7 gap-2 text-center">
+                                <div v-for="day in ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']" :key="day" class="font-bold text-sm text-gray-600 py-2">{{ day }}</div>
+                                <div v-for="blank in firstDayOfMonth" :key="`blank-${blank}`"></div>
+                                <div v-for="day in daysInMonth" :key="day"
+                                     @click="openModal(day)"
+                                     :class="{
+                                         'cursor-not-allowed bg-gray-100 text-gray-400': getDayInfo(day).isPast || getDayInfo(day).hasUserReservation || !getDayInfo(day).capacity || getDayInfo(day).capacity.available_slots <= 0,
+                                         'cursor-pointer hover:bg-blue-50': !getDayInfo(day).isPast && !getDayInfo(day).hasUserReservation && getDayInfo(day).capacity && getDayInfo(day).capacity.available_slots > 0,
+                                         'bg-indigo-500 text-white cursor-default': getDayInfo(day).hasUserReservation,
+                                     }"
+                                     class="p-2 border rounded min-h-[7rem] flex flex-col justify-between transition">
+                                    <div class="font-bold text-right">{{ day }}</div>
+                                    <div class="text-xs text-left">
+                                        <div v-if="getDayInfo(day).hasUserReservation">
+                                            <p class="font-bold">Mi Reserva</p>
+                                            <p class="text-indigo-200">{{ getDayInfo(day).vehiclePatente }}</p>
+                                            <p v-if="getDayInfo(day).canCancel" class="text-indigo-200 text-xs mt-1">
+                                                ✔️ Cancelable
+                                            </p>
+                                            <p v-else class="text-indigo-200 text-xs mt-1">
+                                                ⚠️ No cancelable
+                                            </p>
+                                        </div>
+                                        <div v-else-if="!getDayInfo(day).isPast && getDayInfo(day).capacity">
+                                            <p v-if="getDayInfo(day).capacity.available_slots > 5" class="font-bold text-green-600">Disponible</p>
+                                            <p v-else-if="getDayInfo(day).capacity.available_slots > 0" class="font-bold text-orange-500">Pocos Cupos</p>
+                                            <p v-else class="font-bold text-red-500">Completo</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="flex justify-between items-center mb-4">
-                            <button @click="changeMonth(-1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">&lt;</button>
-                            <h3 class="text-lg font-semibold">{{ displayMonth }} {{ displayYear }}</h3>
-                            <button @click="changeMonth(1)" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">&gt;</button>
-                        </div>
-                        <div class="grid grid-cols-7 gap-2 text-center">
-                            <div v-for="day in ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']" :key="day" class="font-bold text-sm text-gray-600 py-2">{{ day }}</div>
-                            <div v-for="blank in firstDayOfMonth" :key="`blank-${blank}`"></div>
-                            <div v-for="day in daysInMonth" :key="day"
-                                 @click="openModal(day)"
-                                 :class="{
-                                     'cursor-not-allowed bg-gray-100 text-gray-400': getDayInfo(day).isPast || getDayInfo(day).hasUserReservation || !getDayInfo(day).capacity || getDayInfo(day).capacity.available_slots <= 0,
-                                     'cursor-pointer hover:bg-blue-50': !getDayInfo(day).isPast && !getDayInfo(day).hasUserReservation && getDayInfo(day).capacity && getDayInfo(day).capacity.available_slots > 0,
-                                     'bg-indigo-500 text-white cursor-default': getDayInfo(day).hasUserReservation,
-                                 }"
-                                 class="p-2 border rounded min-h-[7rem] flex flex-col justify-between transition">
-                                <div class="font-bold text-right">{{ day }}</div>
-                                <div class="text-xs text-left">
-                                    <div v-if="getDayInfo(day).hasUserReservation">
-                                        <p class="font-bold">Mi Reserva</p>
-                                        <p class="text-indigo-200">{{ getDayInfo(day).vehiclePatente }}</p>
-                                        <p v-if="getDayInfo(day).canCancel" class="text-indigo-200 text-xs mt-1">
-                                            ✔️ Cancelable
-                                        </p>
-                                        <p v-else class="text-indigo-200 text-xs mt-1">
-                                            ⚠️ No cancelable
-                                        </p>
-                                    </div>
-                                    <div v-else-if="!getDayInfo(day).isPast && getDayInfo(day).capacity">
-                                        <p v-if="getDayInfo(day).capacity.available_slots > 5" class="font-bold text-green-600">Disponible</p>
-                                        <p v-else-if="getDayInfo(day).capacity.available_slots > 0" class="font-bold text-orange-500">Pocos Cupos</p>
-                                        <p v-else class="font-bold text-red-500">Completo</p>
-                                    </div>
-                                </div>
+                    <!-- SECCIÓN HISTORIAL DE RESERVAS -->
+                    <div v-if="pastReservations.length > 0" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Historial de Reservas</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-500">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3">Fecha</th>
+                                            <th scope="col" class="px-6 py-3">Vehículo</th>
+                                            <th scope="col" class="px-6 py-3">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="reservation in pastReservations" :key="reservation.id" class="bg-white border-b hover:bg-gray-50">
+                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                                {{ formatDisplayDate(reservation.reservation_date) }}
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                {{ vehicles.find(v => v.id === reservation.vehicle_id)?.marca }} 
+                                                {{ vehicles.find(v => v.id === reservation.vehicle_id)?.modelo }}
+                                                ({{ vehicles.find(v => v.id === reservation.vehicle_id)?.patente }})
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full" 
+                                                      :class="{
+                                                          'bg-green-100 text-green-800': reservation.status === 'Asistió',
+                                                          'bg-red-100 text-red-800': reservation.status === 'Cancelada',
+                                                          'bg-gray-100 text-gray-800': reservation.status === 'Ausente',
+                                                      }">
+                                                    {{ reservation.status }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -311,6 +354,7 @@ const changeMonth = (offset) => {
                                 <!-- MOSTRAMOS TODOS los vehículos - el backend validará cuáles pueden reservar -->
                                 <option v-for="vehicle in vehicles" :key="vehicle.id" :value="vehicle.id">
                                     {{ vehicle.marca }} {{ vehicle.modelo }} ({{ vehicle.patente }})
+                                    <!-- SOLO mostrar "Ya tiene reserva activa" para reservas CONFIRMADAS -->
                                     <span v-if="vehiclesWithActiveReservations.has(vehicle.id)"> - Ya tiene reserva activa</span>
                                 </option>
                             </select>

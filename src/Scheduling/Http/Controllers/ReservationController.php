@@ -7,6 +7,7 @@ use FlipperBox\Scheduling\Models\DailyCapacity;
 use FlipperBox\Scheduling\Models\Reservation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -28,11 +29,11 @@ class ReservationController extends Controller
             })
             ->orderBy('reservation_date', 'desc')
             ->paginate(15)
-            ->withQueryString(); // Importante para que la paginación mantenga los filtros
+            ->withQueryString();
 
         return Inertia::render('Scheduling/Admin/ReservationIndex', [
             'reservations' => $reservations,
-            'filters' => $request->only(['status', 'date']), // Pasamos los filtros a la vista
+            'filters' => $request->only(['status', 'date']),
         ]);
     }
 
@@ -47,9 +48,21 @@ class ReservationController extends Controller
 
         $originalStatus = $reservation->status;
         $newStatus = $validated['status'];
+        $reservationDate = Carbon::parse($reservation->reservation_date)->startOfDay();
 
+        // --- REGLA DE NEGOCIO : VALIDACIÓN DE FECHA ---
+        // Solo permite marcar como Asistió o Ausente si la fecha de la reserva ya pasó o es el día de hoy.
+        if (in_array($newStatus, ['Asistió', 'Ausente']) && $reservationDate->isFuture()) {
+            return back()->with('error', 'No se puede marcar como "Asistió" o "Ausente" una reserva que aún no ha ocurrido.');
+        }
+        
+        // --- REGLA DE NEGOCIO: UNA ORDEN COMPLETADA NO SE PUEDE MODIFICAR ---
+        if (in_array($originalStatus, ['Asistió', 'Ausente', 'Cancelada'])) {
+            return back()->with('error', 'No se puede cambiar el estado de una reserva que ya ha sido finalizada o cancelada.');
+        }
+
+        // --- LÓGICA DE GESTIÓN DE CUPOS ---
         // Si la reserva no estaba 'Confirmada' y ahora sí lo está, o viceversa, ajustamos el cupo.
-        // Esta lógica previene que un administrador cancele una reserva sin que se libere el cupo.
         if ($originalStatus !== 'Confirmada' && $newStatus === 'Confirmada') {
             DB::transaction(function () use ($reservation) {
                 $capacity = DailyCapacity::where('date', $reservation->reservation_date)->lockForUpdate()->first();
@@ -66,6 +79,7 @@ class ReservationController extends Controller
             });
         }
 
+        // Finalmente, actualizamos el estado en la base de datos
         $reservation->update(['status' => $newStatus]);
 
         return back()->with('success', 'El estado de la reserva ha sido actualizado.');

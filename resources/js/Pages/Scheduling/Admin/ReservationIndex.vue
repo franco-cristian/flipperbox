@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
 import ConfirmationModal from '@/Components/ConfirmationModal.vue';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { throttle } from 'lodash';
 
 const props = defineProps({
@@ -36,6 +36,16 @@ const statusClass = (status) => ({
 });
 
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+
+// --- NUEVA FUNCIÓN HELPER ---
+// Función para verificar si una fecha de reserva es futura
+const isFutureReservation = (dateString) => {
+    const reservationDate = new Date(dateString);
+    reservationDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return reservationDate > today;
+};
 
 const setupConfirmation = (config) => {
     actionToConfirm.value = config;
@@ -127,8 +137,21 @@ const closeModal = () => confirmingAction.value = false;
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <div v-if="reservation.status === 'Confirmada'">
-                                                <button @click="confirmStatusChange(reservation, 'Asistió')" class="font-medium text-green-600 hover:underline mr-4">Asistió</button>
-                                                <button @click="confirmStatusChange(reservation, 'Ausente')" class="font-medium text-orange-600 hover:underline">Ausente</button>
+                                                <!-- AHORA LOS BOTONES PUEDEN ESTAR DESHABILITADOS -->
+                                                <button 
+                                                    @click="confirmStatusChange(reservation, 'Asistió')" 
+                                                    class="font-medium text-green-600 hover:underline mr-4"
+                                                    :disabled="isFutureReservation(reservation.reservation_date)"
+                                                    :class="{ 'opacity-50 cursor-not-allowed': isFutureReservation(reservation.reservation_date) }"
+                                                    title="Solo se puede marcar en o después de la fecha de la reserva"
+                                                >Asistió</button>
+                                                <button 
+                                                    @click="confirmStatusChange(reservation, 'Ausente')" 
+                                                    class="font-medium text-orange-600 hover:underline"
+                                                    :disabled="isFutureReservation(reservation.reservation_date)"
+                                                    :class="{ 'opacity-50 cursor-not-allowed': isFutureReservation(reservation.reservation_date) }"
+                                                    title="Solo se puede marcar en o después de la fecha de la reserva"
+                                                >Ausente</button>
                                             </div>
                                         </td>
                                     </tr>

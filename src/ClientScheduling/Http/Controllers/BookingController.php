@@ -27,6 +27,8 @@ class BookingController extends Controller
                 'hasVehicles' => false,
                 'capacities' => [],
                 'userReservations' => [],
+                'currentYear' => now()->year,
+                'currentMonth' => now()->month,
             ]);
         }
 
@@ -43,20 +45,20 @@ class BookingController extends Controller
                 'available_slots' => $capacity->total_slots - $capacity->booked_slots,
             ]);
 
-        // Pasamos las reservas activas del usuario al frontend con información de cancelación
         $userReservations = Reservation::where('user_id', $user->id)
-            ->where('status', 'Confirmada')
+            ->orderBy('reservation_date', 'desc')
             ->get()
             ->map(function ($reservation) {
-                $reservationDate = Carbon::parse($reservation->reservation_date);
-                $now = Carbon::now();
+                $reservationDate = Carbon::parse($reservation->reservation_date)->startOfDay();
+                $now = Carbon::now()->startOfDay();
                 $hoursDifference = $now->diffInHours($reservationDate, false);
                 
                 return [
                     'id' => $reservation->id,
-                    'reservation_date' => $reservation->reservation_date,
+                    'reservation_date' => $reservation->reservation_date->format('Y-m-d'),
                     'vehicle_id' => $reservation->vehicle_id,
-                    'can_cancel' => $hoursDifference > 24, // Puede cancelar si hay más de 24 horas
+                    'status' => $reservation->status,
+                    'can_cancel' => $hoursDifference > 24 && $reservation->status === 'Confirmada',
                     'hours_until_reservation' => $hoursDifference,
                 ];
             });
@@ -82,11 +84,12 @@ class BookingController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        if (! $user->vehiculos()->where('id', $validated['vehicle_id'])->exists()) {
+        // Verificar que el vehículo pertenece al usuario
+        if (!$user->vehiculos()->where('id', $validated['vehicle_id'])->exists()) {
             return back()->with('error', 'El vehículo seleccionado no es válido.');
         }
 
-        // 1. Prevenir que un usuario reserve el mismo día dos veces.
+        // Verificar que el usuario no tenga ya una reserva confirmada para esta fecha
         $alreadyBookedOnDate = Reservation::where('user_id', $user->id)
             ->where('reservation_date', $validated['reservation_date'])
             ->where('status', 'Confirmada')
@@ -94,18 +97,19 @@ class BookingController extends Controller
 
         if ($alreadyBookedOnDate) {
             throw ValidationException::withMessages([
-                'reservation_date' => 'Ya tienes una reserva confirmada para este día.',
+                'reservation_date' => 'Ya tienes una reserva confirmada para este día.'
             ]);
         }
 
-        // 2. Prevenir que el MISMO VEHÍCULO se reserve dos veces.
-        $hasActiveReservationForVehicle = Reservation::where('vehicle_id', $validated['vehicle_id'])
+        // **CORRECCIÓN CRÍTICA: Solo verificar reservas del MISMO vehículo en la MISMA fecha**
+        $hasActiveReservationForVehicleOnThisDate = Reservation::where('vehicle_id', $validated['vehicle_id'])
+            ->where('reservation_date', $validated['reservation_date']) // ← ¡ESTA LÍNEA ES CLAVE!
             ->where('status', 'Confirmada')
             ->exists();
 
-        if ($hasActiveReservationForVehicle) {
+        if ($hasActiveReservationForVehicleOnThisDate) {
             throw ValidationException::withMessages([
-                'vehicle_id' => 'Este vehículo ya tiene una reserva activa. Completa o cancela la reserva actual antes de solicitar una nueva para este vehículo.',
+                'vehicle_id' => 'Este vehículo ya tiene una reserva confirmada para esta fecha específica.'
             ]);
         }
 
@@ -114,7 +118,7 @@ class BookingController extends Controller
 
             if (!$capacity || $capacity->booked_slots >= $capacity->total_slots) {
                 throw ValidationException::withMessages([
-                    'reservation_date' => 'No hay cupos disponibles para la fecha seleccionada. Por favor, elige otra.',
+                    'reservation_date' => 'No hay cupos disponibles para la fecha seleccionada.'
                 ]);
             }
 
@@ -132,36 +136,30 @@ class BookingController extends Controller
         return back()->with('success', '¡Tu reserva ha sido confirmada! Te esperamos.');
     }
 
-    // Nuevo método para cancelar reservas
     public function destroy(Reservation $reservation): RedirectResponse
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Verificar que la reserva pertenece al usuario
         if ($reservation->user_id !== $user->id) {
             return back()->with('error', 'No tienes permiso para cancelar esta reserva.');
         }
-
-        // Verificar que la reserva está confirmada
+        
         if ($reservation->status !== 'Confirmada') {
-            return back()->with('error', 'Esta reserva no está confirmada o ya fue cancelada.');
+            return back()->with('error', 'Esta reserva no se puede cancelar.');
         }
 
-        // Verificar que hay al menos 24 horas de anticipación
         $reservationDate = Carbon::parse($reservation->reservation_date);
         $now = Carbon::now();
         $hoursDifference = $now->diffInHours($reservationDate, false);
 
         if ($hoursDifference <= 24) {
-            return back()->with('error', 'Solo puedes cancelar reservas con al menos 24 horas de anticipación.');
+            return back()->with('error', 'Solo puedes cancelar reservas con más de 24 horas de anticipación.');
         }
 
         DB::transaction(function () use ($reservation) {
-            // Cambiar el estado de la reserva
             $reservation->update(['status' => 'Cancelada']);
 
-            // Liberar el cupo
             $capacity = DailyCapacity::where('date', $reservation->reservation_date)->first();
             if ($capacity && $capacity->booked_slots > 0) {
                 $capacity->decrement('booked_slots');
