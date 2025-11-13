@@ -1,4 +1,5 @@
 <script setup>
+import NotificationBell from '@/Components/NotificationBell.vue';
 import { ref } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
@@ -80,6 +81,7 @@ const can = (permission) => {
                     </button>
                     <div class="flex-1"></div>
                     <div class="hidden sm:flex sm:items-center sm:ms-6">
+                        <NotificationBell class="mr-4" />
                         <div class="ms-3 relative">
                             <Dropdown align="right" width="48">
                                 <template #trigger>

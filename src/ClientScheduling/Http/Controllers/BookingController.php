@@ -2,6 +2,7 @@
 
 namespace FlipperBox\ClientScheduling\Http\Controllers;
 
+use App\Events\NewReservationMade;
 use App\Http\Controllers\Controller;
 use FlipperBox\Scheduling\Models\DailyCapacity;
 use FlipperBox\Scheduling\Models\Reservation;
@@ -101,9 +102,9 @@ class BookingController extends Controller
             ]);
         }
 
-        // **CORRECCIÓN CRÍTICA: Solo verificar reservas del MISMO vehículo en la MISMA fecha**
+        // Solo verificar reservas del MISMO vehículo en la MISMA fecha**
         $hasActiveReservationForVehicleOnThisDate = Reservation::where('vehicle_id', $validated['vehicle_id'])
-            ->where('reservation_date', $validated['reservation_date']) // ← ¡ESTA LÍNEA ES CLAVE!
+            ->where('reservation_date', $validated['reservation_date'])
             ->where('status', 'Confirmada')
             ->exists();
 
@@ -113,7 +114,7 @@ class BookingController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($validated, $user) {
+        $reservation = DB::transaction(function () use ($validated, $user) {
             $capacity = DailyCapacity::where('date', $validated['reservation_date'])->lockForUpdate()->first();
 
             if (!$capacity || $capacity->booked_slots >= $capacity->total_slots) {
@@ -122,7 +123,8 @@ class BookingController extends Controller
                 ]);
             }
 
-            Reservation::create([
+            // Creamos la reserva y la guardamos en una variable
+            $newReservation = Reservation::create([
                 'user_id' => $user->id,
                 'vehicle_id' => $validated['vehicle_id'],
                 'reservation_date' => $validated['reservation_date'],
@@ -131,9 +133,14 @@ class BookingController extends Controller
             ]);
 
             $capacity->increment('booked_slots');
-        });
 
-        return back()->with('success', '¡Tu reserva ha sido confirmada! Te esperamos.');
+            return $newReservation; // Devolvemos la reserva creada desde la transacción
+        });
+        
+        // --- DISPARAMOS EL EVENTO DESPUÉS DE QUE LA TRANSACCIÓN FUE EXITOSA ---
+        NewReservationMade::dispatch($reservation);
+
+        return to_route('cliente.dashboard')->with('success', '¡Tu reserva ha sido confirmada! Te esperamos.');
     }
 
     public function destroy(Reservation $reservation): RedirectResponse
