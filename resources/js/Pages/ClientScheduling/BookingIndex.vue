@@ -1,4 +1,3 @@
-<!-- Archivo: resources/js/Pages/ClientScheduling/BookingIndex.vue -->
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
@@ -27,7 +26,7 @@ const pastReservations = computed(() =>
     props.userReservations.filter(r => r.status !== 'Confirmada')
 );
 
-// SOLO para UX - mostrar qué vehículos tienen reservas activas - CORREGIDO: solo confirmadas
+// SOLO para UX - mostrar qué vehículos tienen reservas activas
 const vehiclesWithActiveReservations = computed(() => {
     if (!props.userReservations || !props.vehicles) return new Set();
     // FILTRAR SOLO RESERVAS CONFIRMADAS
@@ -35,7 +34,7 @@ const vehiclesWithActiveReservations = computed(() => {
     return new Set(confirmedReservations.map(r => r.vehicle_id));
 });
 
-// Función para formatear fechas de ISO a dd-mm-aaaa - CORREGIDA
+// Función para formatear fechas de ISO a dd-mm-aaaa
 const formatDisplayDate = (dateString) => {
     if (!dateString) return '';
     
@@ -44,7 +43,7 @@ const formatDisplayDate = (dateString) => {
     return `${day}-${month}-${year}`;
 };
 
-// Función para formatear la fecha seleccionada en el modal - CORREGIDA
+// Función para formatear la fecha seleccionada en el modal
 const formatSelectedDate = (dateString) => {
     if (!dateString) return '';
     
@@ -98,7 +97,7 @@ const firstDayOfMonth = computed(() => {
     return day === 0 ? 6 : day - 1;
 });
 
-// SOLO para UX - mostrar información visual - CORREGIDA: solo reservas confirmadas
+// SOLO para UX - mostrar información visual
 const getDayInfo = (day) => {
     const dateStr = `${props.currentYear}-${String(props.currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
@@ -125,7 +124,7 @@ const getDayInfo = (day) => {
         };
     }
 
-    // Verificar si es una fecha pasada - COMPARACIÓN CORREGIDA
+    // Verificar si es una fecha pasada
     if (date < today) {
         return { 
             isPast: true, 

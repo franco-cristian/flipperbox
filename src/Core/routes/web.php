@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use FlipperBox\Core\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -26,10 +27,10 @@ Route::get('/', function () {
     ]);
 });
 
-// --- Ruta del Dashboard Principal (Accesible para cualquier usuario autenticado) ---
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified', 'role:Admin'])->name('dashboard');
+// --- RUTA DEL DASHBOARD PRINCIPAL ---
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'role:Admin'])
+    ->name('dashboard');
 
 // --- Rutas de Gestión de Perfil (Accesible para cualquier usuario autenticado) ---
 Route::middleware('auth')->group(function () {
