@@ -2,8 +2,9 @@
 
 namespace FlipperBox\ClientScheduling\Http\Controllers;
 
-use App\Events\NewReservationMade;
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Notifications\ReservationCreated;
 use FlipperBox\Scheduling\Models\DailyCapacity;
 use FlipperBox\Scheduling\Models\Reservation;
 use Illuminate\Http\RedirectResponse;
@@ -102,7 +103,7 @@ class BookingController extends Controller
             ]);
         }
 
-        // Solo verificar reservas del MISMO vehículo en la MISMA fecha**
+        // Solo verificar reservas del MISMO vehículo en la MISMA fecha
         $hasActiveReservationForVehicleOnThisDate = Reservation::where('vehicle_id', $validated['vehicle_id'])
             ->where('reservation_date', $validated['reservation_date'])
             ->where('status', 'Confirmada')
@@ -137,8 +138,14 @@ class BookingController extends Controller
             return $newReservation; // Devolvemos la reserva creada desde la transacción
         });
         
-        // --- DISPARAMOS EL EVENTO DESPUÉS DE QUE LA TRANSACCIÓN FUE EXITOSA ---
-        NewReservationMade::dispatch($reservation);
+        // --- NUEVO SISTEMA DE NOTIFICACIONES ---
+        // 1. Buscamos a los usuarios que tienen permiso de ver reservas (Admins)
+        $admins = User::permission('gestionar reservas')->get();
+
+        // 2. Enviamos la notificación (esto guardará en DB y enviará por Reverb)
+        foreach ($admins as $admin) {
+            $admin->notify(new ReservationCreated($reservation));
+        }
 
         return to_route('cliente.dashboard')->with('success', '¡Tu reserva ha sido confirmada! Te esperamos.');
     }

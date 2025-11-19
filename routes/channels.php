@@ -15,8 +15,7 @@ Broadcast::routes();
 |
 */
 
-// Solo los usuarios que devuelvan 'true' en esta función podrán unirse al canal.
-Broadcast::channel('admin-notifications', function ($user) {
-    // Solo permitimos el acceso si el usuario tiene el permiso de gestionar reservas.
-    return $user !== null && $user->can('gestionar reservas');
+// Canal estándar de Laravel para notificaciones privadas de usuario
+Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
 });

@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use FlipperBox\Core\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -38,6 +39,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::post('/notifications/mark-as-read', function (Request $request) {
+    $request->user()->unreadNotifications->markAsRead();
+    return back();
+})->middleware('auth')->name('notifications.markAsRead');
 
 // --- Inclusión de las Rutas de Autenticación (Login, Registro, etc.) ---
 require __DIR__.'/../../../routes/auth.php';

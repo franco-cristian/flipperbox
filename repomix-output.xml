@@ -59,12 +59,14 @@ app/Http/Middleware/HandleInertiaRequests.php
 app/Http/Requests/Auth/LoginRequest.php
 app/Http/Requests/ProfileUpdateRequest.php
 app/Models/User.php
+app/Notifications/ReservationCreated.php
 app/Observers/ProductObserver.php
 app/Observers/UserObserver.php
 app/Observers/VehiculoObserver.php
 app/Observers/WorkOrderObserver.php
 app/Policies/VehiculoPolicy.php
 app/Providers/AppServiceProvider.php
+app/Providers/BroadcastServiceProvider.php
 app/Providers/PolicyServiceProvider.php
 artisan
 bootstrap/app.php
@@ -73,6 +75,7 @@ bootstrap/providers.php
 composer.json
 config/app.php
 config/auth.php
+config/broadcasting.php
 config/cache.php
 config/database.php
 config/filesystems.php
@@ -80,6 +83,7 @@ config/logging.php
 config/mail.php
 config/permission.php
 config/queue.php
+config/reverb.php
 config/services.php
 config/session.php
 database/.gitignore
@@ -103,6 +107,7 @@ database/migrations/2025_11_06_015800_create_work_order_service_table.php
 database/migrations/2025_11_06_015847_create_external_costs_table.php
 database/migrations/2025_11_06_224559_create_daily_capacities_table.php
 database/migrations/2025_11_06_224636_create_reservations_table.php
+database/migrations/2025_11_18_035950_create_notifications_table.php
 database/seeders/DatabaseSeeder.php
 database/seeders/DemoSeeder.php
 jsconfig.json
@@ -140,6 +145,7 @@ resources/js/Components/InputError.vue
 resources/js/Components/InputLabel.vue
 resources/js/Components/Modal.vue
 resources/js/Components/NavLink.vue
+resources/js/Components/NotificationBell.vue
 resources/js/Components/Pagination.vue
 resources/js/Components/PrimaryButton.vue
 resources/js/Components/ResponsiveNavLink.vue
@@ -186,6 +192,7 @@ resources/js/Pages/WorkManagement/Show.vue
 resources/js/ziggy.js
 resources/views/app.blade.php
 routes/auth.php
+routes/channels.php
 routes/console.php
 src/ClientPortal/Http/Controllers/DashboardController.php
 src/ClientPortal/Http/Controllers/VehiculoController.php
@@ -260,6 +267,93 @@ vite.config.js
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="app/Notifications/ReservationCreated.php">
+<?php
+
+namespace App\Notifications;
+
+use FlipperBox\Scheduling\Models\Reservation;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Notifications\Notification;
+
+class ReservationCreated extends Notification implements ShouldQueue
+{
+    use Queueable;
+
+    public $reservation;
+
+    public function __construct(Reservation $reservation)
+    {
+        $this->reservation = $reservation->load('user', 'vehicle');
+    }
+
+    /**
+     * Aquí definimos los canales: 'database' guarda en la tabla, 'broadcast' envía a Reverb.
+     */
+    public function via(object $notifiable): array
+    {
+        return ['database', 'broadcast'];
+    }
+
+    /**
+     * Lo que se guarda en la tabla de base de datos (JSON).
+     */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'message' => "Nueva reserva de {$this->reservation->user->name} para el vehículo {$this->reservation->vehicle->patente}.",
+            'url' => route('admin.scheduling.reservations.index', ['date' => $this->reservation->reservation_date->format('Y-m-d')]),
+            'reservation_id' => $this->reservation->id,
+        ];
+    }
+
+    /**
+     * Lo que se envía por WebSocket (Reverb).
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        // Reutilizamos el array de base de datos para enviar lo mismo
+        return new BroadcastMessage($this->toArray($notifiable));
+    }
+}
+</file>
+
+<file path="database/migrations/2025_11_18_035950_create_notifications_table.php">
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('notifications', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('type');
+            $table->morphs('notifiable');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('notifications');
+    }
+};
+</file>
 
 <file path=".editorconfig">
 root = true
@@ -977,6 +1071,29 @@ class WorkOrderObserver
 }
 </file>
 
+<file path="app/Providers/BroadcastServiceProvider.php">
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\ServiceProvider;
+
+class BroadcastServiceProvider extends ServiceProvider
+{
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        // Carga las rutas de autorización para los canales de broadcasting.
+        Broadcast::routes();
+
+        require base_path('routes/channels.php');
+    }
+}
+</file>
+
 <file path="app/Providers/PolicyServiceProvider.php">
 <?php
 
@@ -1151,6 +1268,91 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+];
+</file>
+
+<file path="config/broadcasting.php">
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Broadcaster
+    |--------------------------------------------------------------------------
+    |
+    | This option controls the default broadcaster that will be used by the
+    | framework when an event needs to be broadcast. You may set this to
+    | any of the connections defined in the "connections" array below.
+    |
+    | Supported: "reverb", "pusher", "ably", "redis", "log", "null"
+    |
+    */
+
+    'default' => env('BROADCAST_CONNECTION', 'null'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Broadcast Connections
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define all of the broadcast connections that will be used
+    | to broadcast events to other systems or over WebSockets. Samples of
+    | each available type of connection are provided inside this array.
+    |
+    */
+
+    'connections' => [
+
+        'reverb' => [
+            'driver' => 'reverb',
+            'key' => env('REVERB_APP_KEY'),
+            'secret' => env('REVERB_APP_SECRET'),
+            'app_id' => env('REVERB_APP_ID'),
+            'options' => [
+                'host' => env('REVERB_HOST'),
+                'port' => env('REVERB_PORT', 443),
+                'scheme' => env('REVERB_SCHEME', 'https'),
+                'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
+            ],
+            'client_options' => [
+                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+            ],
+        ],
+
+        'pusher' => [
+            'driver' => 'pusher',
+            'key' => env('PUSHER_APP_KEY'),
+            'secret' => env('PUSHER_APP_SECRET'),
+            'app_id' => env('PUSHER_APP_ID'),
+            'options' => [
+                'cluster' => env('PUSHER_APP_CLUSTER'),
+                'host' => env('PUSHER_HOST') ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
+                'port' => env('PUSHER_PORT', 443),
+                'scheme' => env('PUSHER_SCHEME', 'https'),
+                'encrypted' => true,
+                'useTLS' => env('PUSHER_SCHEME', 'https') === 'https',
+            ],
+            'client_options' => [
+                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+            ],
+        ],
+
+        'ably' => [
+            'driver' => 'ably',
+            'key' => env('ABLY_KEY'),
+        ],
+
+        'log' => [
+            'driver' => 'log',
+        ],
+
+        'null' => [
+            'driver' => 'null',
+        ],
+
+    ],
 
 ];
 </file>
@@ -1374,6 +1576,9 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => 'prefer',
+            'options' => [
+                PDO::ATTR_EMULATE_PREPARES => true,
+            ],
         ],
 
         'sqlsrv' => [
@@ -1426,7 +1631,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
@@ -2128,6 +2333,104 @@ return [
         'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
         'database' => env('DB_CONNECTION', 'sqlite'),
         'table' => 'failed_jobs',
+    ],
+
+];
+</file>
+
+<file path="config/reverb.php">
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Reverb Server
+    |--------------------------------------------------------------------------
+    |
+    | This option controls the default server used by Reverb to handle
+    | incoming messages as well as broadcasting message to all your
+    | connected clients. At this time only "reverb" is supported.
+    |
+    */
+
+    'default' => env('REVERB_SERVER', 'reverb'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reverb Servers
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define details for each of the supported Reverb servers.
+    | Each server has its own configuration options that are defined in
+    | the array below. You should ensure all the options are present.
+    |
+    */
+
+    'servers' => [
+
+        'reverb' => [
+            'host' => env('REVERB_SERVER_HOST', '0.0.0.0'),
+            'port' => env('REVERB_SERVER_PORT', 8080),
+            'path' => env('REVERB_SERVER_PATH', ''),
+            'hostname' => env('REVERB_HOST'),
+            'options' => [
+                'tls' => [],
+            ],
+            'max_request_size' => env('REVERB_MAX_REQUEST_SIZE', 10_000),
+            'scaling' => [
+                'enabled' => env('REVERB_SCALING_ENABLED', false),
+                'channel' => env('REVERB_SCALING_CHANNEL', 'reverb'),
+                'server' => [
+                    'url' => env('REDIS_URL'),
+                    'host' => env('REDIS_HOST', '127.0.0.1'),
+                    'port' => env('REDIS_PORT', '6379'),
+                    'username' => env('REDIS_USERNAME'),
+                    'password' => env('REDIS_PASSWORD'),
+                    'database' => env('REDIS_DB', '0'),
+                    'timeout' => env('REDIS_TIMEOUT', 60),
+                ],
+            ],
+            'pulse_ingest_interval' => env('REVERB_PULSE_INGEST_INTERVAL', 15),
+            'telescope_ingest_interval' => env('REVERB_TELESCOPE_INGEST_INTERVAL', 15),
+        ],
+
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reverb Applications
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define how Reverb applications are managed. If you choose
+    | to use the "config" provider, you may define an array of apps which
+    | your server will support, including their connection credentials.
+    |
+    */
+
+    'apps' => [
+
+        'provider' => 'config',
+
+        'apps' => [
+            [
+                'key' => env('REVERB_APP_KEY'),
+                'secret' => env('REVERB_APP_SECRET'),
+                'app_id' => env('REVERB_APP_ID'),
+                'options' => [
+                    'host' => env('REVERB_HOST'),
+                    'port' => env('REVERB_PORT', 443),
+                    'scheme' => env('REVERB_SCHEME', 'https'),
+                    'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
+                ],
+                'allowed_origins' => ['*'],
+                'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
+                'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
+                'max_connections' => env('REVERB_APP_MAX_CONNECTIONS'),
+                'max_message_size' => env('REVERB_APP_MAX_MESSAGE_SIZE', 10_000),
+            ],
+        ],
+
     ],
 
 ];
@@ -4024,13 +4327,6 @@ createInertiaApp({
 });
 </file>
 
-<file path="resources/js/bootstrap.js">
-import axios from 'axios';
-window.axios = axios;
-
-window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-</file>
-
 <file path="resources/js/Components/Checkbox.vue">
 <script setup>
 import { computed } from 'vue';
@@ -4421,6 +4717,125 @@ const classes = computed(() =>
     <Link :href="href" :class="classes">
         <slot />
     </Link>
+</template>
+</file>
+
+<file path="resources/js/Components/NotificationBell.vue">
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { Link, usePage, router } from '@inertiajs/vue3';
+
+const page = usePage();
+
+// El estado inicial ahora se carga desde las props globales
+const notifications = ref(page.props.notifications || []);
+const showDropdown = ref(false);
+
+const unreadCount = computed(() => notifications.value.filter(n => !n.read_at).length);
+const canViewNotifications = computed(() => 
+    page.props.auth.user?.permissions?.includes('gestionar reservas')
+);
+
+onMounted(() => {
+    if (canViewNotifications.value) {
+        // AHORA (Notificación estándar de Laravel)
+        // Usamos el ID del usuario autenticado para escuchar SU canal privado
+        window.Echo.private(`App.Models.User.${page.props.auth.user.id}`)
+            .notification((notification) => {
+                const newNotification = {
+                    id: notification.id,
+                    data: {
+                        message: notification.message, // Nota: Ya no viene dentro de 'data' anidado, Laravel lo aplana
+                        url: notification.url,
+                    },
+                    created_at: new Date().toISOString(),
+                    read_at: null,
+                };
+                notifications.value.unshift(newNotification);
+                
+                // Opcional: Reproducir un sonido
+                // playNotificationSound();
+            });
+    }
+});
+
+const markAsRead = () => {
+    if (unreadCount.value > 0) {
+        // Enviamos una petición al backend para marcar como leídas
+        router.post(route('notifications.markAsRead'), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                notifications.value.forEach(n => n.read_at = new Date().toISOString());
+            }
+        });
+    }
+};
+
+// Función opcional para reproducir sonido de notificación
+const playNotificationSound = () => {
+    // implementar un sonido de notificación aquí
+    // const audio = new Audio('/sounds/notification.mp3');
+    // audio.play().catch(e => console.log('Error reproduciendo sonido:', e));
+};
+</script>
+
+<template>
+    <div v-if="canViewNotifications" class="relative">
+        <!-- Icono de la Campanita -->
+        <!-- Agregamos z-50 para que el botón quede por encima de todo si es necesario -->
+        <button 
+            @click="showDropdown = !showDropdown; markAsRead()" 
+            class="relative z-50 text-gray-500 hover:text-gray-700 focus:outline-none"
+        >
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+            </svg>
+            <span 
+                v-if="unreadCount > 0" 
+                class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full"
+            >
+                {{ unreadCount }}
+            </span>
+        </button>
+
+        <!-- NUEVO: Overlay invisible para detectar clic afuera -->
+        <!-- Este div cubre toda la pantalla. Al hacer clic en él, cierra el dropdown -->
+        <div 
+            v-show="showDropdown" 
+            class="fixed inset-0 z-40 cursor-default" 
+            @click="showDropdown = false"
+        ></div>
+
+        <!-- Dropdown de Notificaciones -->
+        <!-- Eliminamos @click.away y ajustamos el z-index a 50 para que flote sobre el overlay -->
+        <div 
+            v-show="showDropdown" 
+            class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-50"
+        >
+            <div class="py-2">
+                <div v-if="notifications.length > 0">
+                    <!-- Limitamos a las últimas 5 para que no sea enorme -->
+                    <Link 
+                        v-for="notification in notifications.slice(0, 5)" 
+                        :key="notification.id" 
+                        :href="notification.data.url" 
+                        @click="showDropdown = false" 
+                        class="flex items-center px-4 py-3 border-b hover:bg-gray-100 -mx-2"
+                    >
+                        <div class="mx-3">
+                            <p class="text-sm text-gray-600">{{ notification.data.message }}</p>
+                            <p class="text-xs text-gray-400">
+                                {{ new Date(notification.created_at).toLocaleString('es-ES') }}
+                            </p>
+                        </div>
+                    </Link>
+                </div>
+                <div v-else class="px-4 py-3 text-sm text-gray-500 text-center">
+                    No hay notificaciones.
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 </file>
 
@@ -6705,6 +7120,30 @@ Route::middleware('auth')->group(function () {
 });
 </file>
 
+<file path="routes/channels.php">
+<?php
+
+use Illuminate\Support\Facades\Broadcast;
+
+Broadcast::routes();
+
+/*
+|--------------------------------------------------------------------------
+| Broadcast Channels
+|--------------------------------------------------------------------------
+|
+| Here you may register all of the event broadcasting channels that your
+| application supports. The given channel authorization callbacks are
+| used to check if an authenticated user can listen to the channel.
+|
+*/
+
+// Canal estándar de Laravel para notificaciones privadas de usuario
+Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
+});
+</file>
+
 <file path="routes/console.php">
 <?php
 
@@ -6767,6 +7206,7 @@ namespace FlipperBox\Core\Http\Controllers;
 use App\Http\Controllers\Controller;
 use FlipperBox\Inventory\Models\Product;
 use FlipperBox\WorkManagement\Models\WorkOrder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -6774,15 +7214,18 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        // --- MÉTRICA 1: RESUMEN FINANCIERO DEL MES ACTUAL ---
-        $ingresosMes = WorkOrder::where('status', 'Completada')
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        // --- MÉTRICA 1: RESUMEN FINANCIERO (CON CASTEO A FLOAT) ---
+        $ingresosMes = (float) WorkOrder::where('status', 'Completada')
             ->whereMonth('completion_date', now()->month)
             ->whereYear('completion_date', now()->year)
             ->sum('total');
 
-        // --- MÉTRICA 2: ACTIVIDAD DEL TALLER (CHART.JS) ---
+        // --- MÉTRICA 2: ACTIVIDAD DEL TALLER ---
         $activityData = WorkOrder::select(
                 DB::raw('DATE(completion_date) as date'),
                 DB::raw('count(*) as count')
@@ -6794,7 +7237,6 @@ class DashboardController extends Controller
             ->get()
             ->pluck('count', 'date');
 
-        // Preparamos el array completo de los últimos 30 días para el gráfico
         $dailyActivityChart = [];
         for ($i = 29; $i >= 0; $i--) {
             $date = now()->subDays($i)->format('Y-m-d');
@@ -6826,7 +7268,7 @@ class DashboardController extends Controller
 
         // --- MÉTRICA 5: ESTADO DE ÓRDENES DE TRABAJO (GRÁFICO CIRCULAR) ---
         $workOrderStatus = WorkOrder::select('status', DB::raw('count(*) as count'))
-            ->where('created_at', '>=', now()->subDays(30)) // Órdenes creadas en los últimos 30 días
+            ->where('created_at', '>=', now()->subDays(30))
             ->groupBy('status')
             ->get()
             ->pluck('count', 'status');
@@ -6835,6 +7277,9 @@ class DashboardController extends Controller
             'labels' => $workOrderStatus->keys(),
             'data' => $workOrderStatus->values(),
         ];
+        
+        // --- DATOS PARA NOTIFICACIONES ---
+        $notifications = $user->unreadNotifications()->limit(5)->get();
 
         return Inertia::render('Dashboard', [
             'ingresosMes' => $ingresosMes,
@@ -6842,6 +7287,7 @@ class DashboardController extends Controller
             'topProducts' => $topProducts,
             'lowStockProducts' => $lowStockProducts,
             'workOrderStatusChart' => $workOrderStatusChart,
+            'notifications' => $notifications,
         ]);
     }
 }
@@ -8353,6 +8799,30 @@ class DatabaseSeeder extends Seeder
         $this->call(DemoSeeder::class);
     }
 }
+</file>
+
+<file path="resources/js/bootstrap.js">
+import axios from 'axios';
+window.axios = axios;
+
+window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+// --- CONFIGURACIÓN DE LARAVEL ECHO ---
+
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+window.Pusher = Pusher;
+
+window.Echo = new Echo({
+    broadcaster: 'reverb',
+    key: import.meta.env.VITE_REVERB_APP_KEY,
+    wsHost: import.meta.env.VITE_REVERB_HOST,
+    wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+    wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+    enabledTransports: ['ws', 'wss'],
+});
 </file>
 
 <file path="resources/js/Components/ApplicationLogo.vue">
@@ -10185,66 +10655,6 @@ class WorkOrder extends Model
 }
 </file>
 
-<file path="bootstrap/app.php">
-<?php
-
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
-
-return Application::configure(basePath: dirname(__DIR__))
-    ->withRouting(
-        commands: __DIR__.'/../routes/console.php',
-        health: '/up',
-    )
-    ->withMiddleware(function (Middleware $middleware) {
-        
-        $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
-        ]);
-
-        $middleware->alias([
-            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
-        ]);
-    })
-    ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
-</file>
-
-<file path="package.json">
-{
-    "$schema": "https://json.schemastore.org/package.json",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "build": "vite build",
-        "dev": "vite"
-    },
-    "devDependencies": {
-        "@inertiajs/vue3": "^2.0.0",
-        "@tailwindcss/forms": "^0.5.3",
-        "@tailwindcss/vite": "^4.0.0",
-        "@vitejs/plugin-vue": "^6.0.1",
-        "autoprefixer": "^10.4.12",
-        "axios": "^1.11.0",
-        "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^2.0.0",
-        "lodash": "^4.17.21",
-        "postcss": "^8.4.31",
-        "tailwindcss": "^3.2.1",
-        "vite": "^7.0.7",
-        "vue": "^3.4.0"
-    },
-    "dependencies": {
-        "chart.js": "^4.5.1",
-        "vue-chartjs": "^5.3.3"
-    }
-}
-</file>
-
 <file path="resources/js/Pages/ClientScheduling/BookingIndex.vue">
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -10847,180 +11257,6 @@ class VehiculoController extends Controller
 }
 </file>
 
-<file path="src/ClientScheduling/Http/Controllers/BookingController.php">
-<?php
-
-namespace FlipperBox\ClientScheduling\Http\Controllers;
-
-use App\Http\Controllers\Controller;
-use FlipperBox\Scheduling\Models\DailyCapacity;
-use FlipperBox\Scheduling\Models\Reservation;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
-use Inertia\Response;
-use Carbon\Carbon;
-
-class BookingController extends Controller
-{
-    public function index(Request $request): Response
-    {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        $user->load('vehiculos');
-
-        if ($user->vehiculos->isEmpty()) {
-            return Inertia::render('ClientScheduling/BookingIndex', [
-                'hasVehicles' => false,
-                'capacities' => [],
-                'userReservations' => [],
-                'currentYear' => now()->year,
-                'currentMonth' => now()->month,
-            ]);
-        }
-
-        $year = $request->input('year', now()->year);
-        $month = $request->input('month', now()->month);
-
-        $capacities = DailyCapacity::whereYear('date', $year)
-            ->whereMonth('date', $month)
-            ->where('date', '>=', today())
-            ->orderBy('date')
-            ->get()
-            ->map(fn ($capacity) => [
-                'date' => $capacity->date->format('Y-m-d'),
-                'available_slots' => $capacity->total_slots - $capacity->booked_slots,
-            ]);
-
-        $userReservations = Reservation::where('user_id', $user->id)
-            ->orderBy('reservation_date', 'desc')
-            ->get()
-            ->map(function ($reservation) {
-                $reservationDate = Carbon::parse($reservation->reservation_date)->startOfDay();
-                $now = Carbon::now()->startOfDay();
-                $hoursDifference = $now->diffInHours($reservationDate, false);
-                
-                return [
-                    'id' => $reservation->id,
-                    'reservation_date' => $reservation->reservation_date->format('Y-m-d'),
-                    'vehicle_id' => $reservation->vehicle_id,
-                    'status' => $reservation->status,
-                    'can_cancel' => $hoursDifference > 24 && $reservation->status === 'Confirmada',
-                    'hours_until_reservation' => $hoursDifference,
-                ];
-            });
-
-        return Inertia::render('ClientScheduling/BookingIndex', [
-            'hasVehicles' => true,
-            'vehicles' => $user->vehiculos,
-            'capacities' => $capacities,
-            'currentYear' => (int)$year,
-            'currentMonth' => (int)$month,
-            'userReservations' => $userReservations,
-        ]);
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'vehicle_id' => ['required', 'exists:vehiculos,id'],
-            'reservation_date' => ['required', 'date', 'after_or_equal:today'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        // Verificar que el vehículo pertenece al usuario
-        if (!$user->vehiculos()->where('id', $validated['vehicle_id'])->exists()) {
-            return back()->with('error', 'El vehículo seleccionado no es válido.');
-        }
-
-        // Verificar que el usuario no tenga ya una reserva confirmada para esta fecha
-        $alreadyBookedOnDate = Reservation::where('user_id', $user->id)
-            ->where('reservation_date', $validated['reservation_date'])
-            ->where('status', 'Confirmada')
-            ->exists();
-
-        if ($alreadyBookedOnDate) {
-            throw ValidationException::withMessages([
-                'reservation_date' => 'Ya tienes una reserva confirmada para este día.'
-            ]);
-        }
-
-        // **CORRECCIÓN CRÍTICA: Solo verificar reservas del MISMO vehículo en la MISMA fecha**
-        $hasActiveReservationForVehicleOnThisDate = Reservation::where('vehicle_id', $validated['vehicle_id'])
-            ->where('reservation_date', $validated['reservation_date']) // ← ¡ESTA LÍNEA ES CLAVE!
-            ->where('status', 'Confirmada')
-            ->exists();
-
-        if ($hasActiveReservationForVehicleOnThisDate) {
-            throw ValidationException::withMessages([
-                'vehicle_id' => 'Este vehículo ya tiene una reserva confirmada para esta fecha específica.'
-            ]);
-        }
-
-        DB::transaction(function () use ($validated, $user) {
-            $capacity = DailyCapacity::where('date', $validated['reservation_date'])->lockForUpdate()->first();
-
-            if (!$capacity || $capacity->booked_slots >= $capacity->total_slots) {
-                throw ValidationException::withMessages([
-                    'reservation_date' => 'No hay cupos disponibles para la fecha seleccionada.'
-                ]);
-            }
-
-            Reservation::create([
-                'user_id' => $user->id,
-                'vehicle_id' => $validated['vehicle_id'],
-                'reservation_date' => $validated['reservation_date'],
-                'notes' => $validated['notes'],
-                'status' => 'Confirmada',
-            ]);
-
-            $capacity->increment('booked_slots');
-        });
-
-        return back()->with('success', '¡Tu reserva ha sido confirmada! Te esperamos.');
-    }
-
-    public function destroy(Reservation $reservation): RedirectResponse
-    {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        if ($reservation->user_id !== $user->id) {
-            return back()->with('error', 'No tienes permiso para cancelar esta reserva.');
-        }
-        
-        if ($reservation->status !== 'Confirmada') {
-            return back()->with('error', 'Esta reserva no se puede cancelar.');
-        }
-
-        $reservationDate = Carbon::parse($reservation->reservation_date);
-        $now = Carbon::now();
-        $hoursDifference = $now->diffInHours($reservationDate, false);
-
-        if ($hoursDifference <= 24) {
-            return back()->with('error', 'Solo puedes cancelar reservas con más de 24 horas de anticipación.');
-        }
-
-        DB::transaction(function () use ($reservation) {
-            $reservation->update(['status' => 'Cancelada']);
-
-            $capacity = DailyCapacity::where('date', $reservation->reservation_date)->first();
-            if ($capacity && $capacity->booked_slots > 0) {
-                $capacity->decrement('booked_slots');
-            }
-        });
-
-        return back()->with('success', 'Reserva cancelada exitosamente.');
-    }
-}
-</file>
-
 <file path="src/Inventory/Http/Controllers/SupplierController.php">
 <?php
 
@@ -11358,12 +11594,16 @@ class HandleInertiaRequests extends Middleware
                     ] : null,
                 ];
             },
-            
+
             // Compartimos los mensajes flash también de forma "lazy".
             'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
             ],
+            // Comparte las notificaciones no leídas en cada petición si el usuario está logueado.
+            'notifications' => $request->user()
+                ? $request->user()->unreadNotifications()->limit(10)->get()
+                : [],
         ];
     }
 }
@@ -11440,6 +11680,70 @@ class User extends Authenticatable
     public function workOrders(): HasMany
     {
         return $this->hasMany(WorkOrder::class, 'mechanic_id');
+    }
+}
+</file>
+
+<file path="bootstrap/app.php">
+<?php
+
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+        
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
+        $middleware->alias([
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+        ]);
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
+    })->create();
+</file>
+
+<file path="package.json">
+{
+    "$schema": "https://json.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@inertiajs/vue3": "^2.0.0",
+        "@laravel/echo-vue": "^2.2.6",
+        "@tailwindcss/forms": "^0.5.3",
+        "@tailwindcss/vite": "^4.0.0",
+        "@vitejs/plugin-vue": "^6.0.1",
+        "autoprefixer": "^10.4.12",
+        "axios": "^1.11.0",
+        "concurrently": "^9.0.1",
+        "laravel-echo": "^2.2.6",
+        "laravel-vite-plugin": "^2.0.0",
+        "lodash": "^4.17.21",
+        "postcss": "^8.4.31",
+        "pusher-js": "^8.4.0",
+        "tailwindcss": "^3.2.1",
+        "vite": "^7.0.7",
+        "vue": "^3.4.0"
+    },
+    "dependencies": {
+        "chart.js": "^4.5.1",
+        "vue-chartjs": "^5.3.3"
     }
 }
 </file>
@@ -12047,6 +12351,194 @@ const closeModal = () => confirmingAction.value = false;
 </template>
 </file>
 
+<file path="src/ClientScheduling/Http/Controllers/BookingController.php">
+<?php
+
+namespace FlipperBox\ClientScheduling\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Notifications\ReservationCreated;
+use FlipperBox\Scheduling\Models\DailyCapacity;
+use FlipperBox\Scheduling\Models\Reservation;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Inertia\Response;
+use Carbon\Carbon;
+
+class BookingController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $user->load('vehiculos');
+
+        if ($user->vehiculos->isEmpty()) {
+            return Inertia::render('ClientScheduling/BookingIndex', [
+                'hasVehicles' => false,
+                'capacities' => [],
+                'userReservations' => [],
+                'currentYear' => now()->year,
+                'currentMonth' => now()->month,
+            ]);
+        }
+
+        $year = $request->input('year', now()->year);
+        $month = $request->input('month', now()->month);
+
+        $capacities = DailyCapacity::whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->where('date', '>=', today())
+            ->orderBy('date')
+            ->get()
+            ->map(fn ($capacity) => [
+                'date' => $capacity->date->format('Y-m-d'),
+                'available_slots' => $capacity->total_slots - $capacity->booked_slots,
+            ]);
+
+        $userReservations = Reservation::where('user_id', $user->id)
+            ->orderBy('reservation_date', 'desc')
+            ->get()
+            ->map(function ($reservation) {
+                $reservationDate = Carbon::parse($reservation->reservation_date)->startOfDay();
+                $now = Carbon::now()->startOfDay();
+                $hoursDifference = $now->diffInHours($reservationDate, false);
+                
+                return [
+                    'id' => $reservation->id,
+                    'reservation_date' => $reservation->reservation_date->format('Y-m-d'),
+                    'vehicle_id' => $reservation->vehicle_id,
+                    'status' => $reservation->status,
+                    'can_cancel' => $hoursDifference > 24 && $reservation->status === 'Confirmada',
+                    'hours_until_reservation' => $hoursDifference,
+                ];
+            });
+
+        return Inertia::render('ClientScheduling/BookingIndex', [
+            'hasVehicles' => true,
+            'vehicles' => $user->vehiculos,
+            'capacities' => $capacities,
+            'currentYear' => (int)$year,
+            'currentMonth' => (int)$month,
+            'userReservations' => $userReservations,
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'vehicle_id' => ['required', 'exists:vehiculos,id'],
+            'reservation_date' => ['required', 'date', 'after_or_equal:today'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Verificar que el vehículo pertenece al usuario
+        if (!$user->vehiculos()->where('id', $validated['vehicle_id'])->exists()) {
+            return back()->with('error', 'El vehículo seleccionado no es válido.');
+        }
+
+        // Verificar que el usuario no tenga ya una reserva confirmada para esta fecha
+        $alreadyBookedOnDate = Reservation::where('user_id', $user->id)
+            ->where('reservation_date', $validated['reservation_date'])
+            ->where('status', 'Confirmada')
+            ->exists();
+
+        if ($alreadyBookedOnDate) {
+            throw ValidationException::withMessages([
+                'reservation_date' => 'Ya tienes una reserva confirmada para este día.'
+            ]);
+        }
+
+        // Solo verificar reservas del MISMO vehículo en la MISMA fecha
+        $hasActiveReservationForVehicleOnThisDate = Reservation::where('vehicle_id', $validated['vehicle_id'])
+            ->where('reservation_date', $validated['reservation_date'])
+            ->where('status', 'Confirmada')
+            ->exists();
+
+        if ($hasActiveReservationForVehicleOnThisDate) {
+            throw ValidationException::withMessages([
+                'vehicle_id' => 'Este vehículo ya tiene una reserva confirmada para esta fecha específica.'
+            ]);
+        }
+
+        $reservation = DB::transaction(function () use ($validated, $user) {
+            $capacity = DailyCapacity::where('date', $validated['reservation_date'])->lockForUpdate()->first();
+
+            if (!$capacity || $capacity->booked_slots >= $capacity->total_slots) {
+                throw ValidationException::withMessages([
+                    'reservation_date' => 'No hay cupos disponibles para la fecha seleccionada.'
+                ]);
+            }
+
+            // Creamos la reserva y la guardamos en una variable
+            $newReservation = Reservation::create([
+                'user_id' => $user->id,
+                'vehicle_id' => $validated['vehicle_id'],
+                'reservation_date' => $validated['reservation_date'],
+                'notes' => $validated['notes'],
+                'status' => 'Confirmada',
+            ]);
+
+            $capacity->increment('booked_slots');
+
+            return $newReservation; // Devolvemos la reserva creada desde la transacción
+        });
+        
+        // --- NUEVO SISTEMA DE NOTIFICACIONES ---
+        // 1. Buscamos a los usuarios que tienen permiso de ver reservas (Admins)
+        $admins = User::permission('gestionar reservas')->get();
+
+        // 2. Enviamos la notificación (esto guardará en DB y enviará por Reverb)
+        foreach ($admins as $admin) {
+            $admin->notify(new ReservationCreated($reservation));
+        }
+
+        return to_route('cliente.dashboard')->with('success', '¡Tu reserva ha sido confirmada! Te esperamos.');
+    }
+
+    public function destroy(Reservation $reservation): RedirectResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($reservation->user_id !== $user->id) {
+            return back()->with('error', 'No tienes permiso para cancelar esta reserva.');
+        }
+        
+        if ($reservation->status !== 'Confirmada') {
+            return back()->with('error', 'Esta reserva no se puede cancelar.');
+        }
+
+        $reservationDate = Carbon::parse($reservation->reservation_date);
+        $now = Carbon::now();
+        $hoursDifference = $now->diffInHours($reservationDate, false);
+
+        if ($hoursDifference <= 24) {
+            return back()->with('error', 'Solo puedes cancelar reservas con más de 24 horas de anticipación.');
+        }
+
+        DB::transaction(function () use ($reservation) {
+            $reservation->update(['status' => 'Cancelada']);
+
+            $capacity = DailyCapacity::where('date', $reservation->reservation_date)->first();
+            if ($capacity && $capacity->booked_slots > 0) {
+                $capacity->decrement('booked_slots');
+            }
+        });
+
+        return back()->with('success', 'Reserva cancelada exitosamente.');
+    }
+}
+</file>
+
 <file path="src/Crm/Http/Controllers/VehiculoController.php">
 <?php
 
@@ -12227,202 +12719,13 @@ Route::prefix('inventario')->name('inventario.')->group(function () {
 });
 </file>
 
-<file path="config/app.php">
-<?php
-
-return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | Application Name
-    |--------------------------------------------------------------------------
-    |
-    | This value is the name of your application, which will be used when the
-    | framework needs to place the application's name in a notification or
-    | other UI elements where an application name needs to be displayed.
-    |
-    */
-
-    'name' => env('APP_NAME', 'Laravel'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Application Environment
-    |--------------------------------------------------------------------------
-    |
-    | This value determines the "environment" your application is currently
-    | running in. This may determine how you prefer to configure various
-    | services the application utilizes. Set this in your ".env" file.
-    |
-    */
-
-    'env' => env('APP_ENV', 'production'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Application Debug Mode
-    |--------------------------------------------------------------------------
-    |
-    | When your application is in debug mode, detailed error messages with
-    | stack traces will be shown on every error that occurs within your
-    | application. If disabled, a simple generic error page is shown.
-    |
-    */
-
-    'debug' => (bool) env('APP_DEBUG', false),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Application URL
-    |--------------------------------------------------------------------------
-    |
-    | This URL is used by the console to properly generate URLs when using
-    | the Artisan command line tool. You should set this to the root of
-    | the application so that it's available within Artisan commands.
-    |
-    */
-
-    'url' => env('APP_URL', 'http://localhost'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Application Timezone
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
-    |
-    */
-
-    'timezone' => 'America/Argentina/Buenos_Aires',
-
-    /*
-    |--------------------------------------------------------------------------
-    | Application Locale Configuration
-    |--------------------------------------------------------------------------
-    |
-    | The application locale determines the default locale that will be used
-    | by Laravel's translation / localization methods. This option can be
-    | set to any locale for which you plan to have translation strings.
-    |
-    */
-
-    'locale' => env('APP_LOCALE', 'en'),
-
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
-
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Encryption Key
-    |--------------------------------------------------------------------------
-    |
-    | This key is utilized by Laravel's encryption services and should be set
-    | to a random, 32 character string to ensure that all encrypted values
-    | are secure. You should do this prior to deploying the application.
-    |
-    */
-
-    'cipher' => 'AES-256-CBC',
-
-    'key' => env('APP_KEY'),
-
-    'previous_keys' => [
-        ...array_filter(
-            explode(',', (string) env('APP_PREVIOUS_KEYS', ''))
-        ),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Maintenance Mode Driver
-    |--------------------------------------------------------------------------
-    |
-    | These configuration options determine the driver used to determine and
-    | manage Laravel's "maintenance mode" status. The "cache" driver will
-    | allow maintenance mode to be controlled across multiple machines.
-    |
-    | Supported drivers: "file", "cache"
-    |
-    */
-
-    'maintenance' => [
-        'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
-        'store' => env('APP_MAINTENANCE_STORE', 'database'),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Autoloaded Service Providers
-    |--------------------------------------------------------------------------
-    |
-    | The service providers listed here will be automatically loaded on the
-    | request to your application. Feel free to add your own services to
-    | this array to grant expanded functionality to your applications.
-    |
-    */
-
-    'providers' => [
-
-        /*
-         * Laravel Framework Service Providers...
-         */
-        Illuminate\Auth\AuthServiceProvider::class,
-        Illuminate\Broadcasting\BroadcastServiceProvider::class,
-        Illuminate\Bus\BusServiceProvider::class,
-        Illuminate\Cache\CacheServiceProvider::class,
-        Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
-        Illuminate\Cookie\CookieServiceProvider::class,
-        Illuminate\Database\DatabaseServiceProvider::class,
-        Illuminate\Encryption\EncryptionServiceProvider::class,
-        Illuminate\Filesystem\FilesystemServiceProvider::class,
-        Illuminate\Foundation\Providers\FoundationServiceProvider::class,
-        Illuminate\Hashing\HashServiceProvider::class,
-        Illuminate\Mail\MailServiceProvider::class,
-        Illuminate\Notifications\NotificationServiceProvider::class,
-        Illuminate\Pagination\PaginationServiceProvider::class,
-        Illuminate\Pipeline\PipelineServiceProvider::class,
-        Illuminate\Queue\QueueServiceProvider::class,
-        Illuminate\Redis\RedisServiceProvider::class,
-        Illuminate\Auth\Passwords\PasswordResetServiceProvider::class,
-        Illuminate\Session\SessionServiceProvider::class,
-        Illuminate\Translation\TranslationServiceProvider::class,
-        Illuminate\Validation\ValidationServiceProvider::class,
-        Illuminate\View\ViewServiceProvider::class,
-
-        /*
-         * Package Service Providers...
-         */
-
-        /*
-         * Application Service Providers...
-         */
-        App\Providers\AppServiceProvider::class,
-        //App\Providers\AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
-        //App\Providers\EventServiceProvider::class,
-        //App\Providers\RouteServiceProvider::class,
-        
-        /*
-         * Módulos de la Aplicación FlipperBox
-         */
-        // FlipperBox\Core\Providers\CoreServiceProvider::class,
-        // FlipperBox\Crm\Providers\CrmServiceProvider::class,
-        // FlipperBox\MechanicPanel\Providers\MechanicPanelServiceProvider::class,
-
-    ],
-
-];
-</file>
-
 <file path="src/Core/routes/web.php">
 <?php
 
 use App\Http\Controllers\ProfileController;
 use FlipperBox\Core\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -12458,6 +12761,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::post('/notifications/mark-as-read', function (Request $request) {
+    $request->user()->unreadNotifications->markAsRead();
+    return back();
+})->middleware('auth')->name('notifications.markAsRead');
 
 // --- Inclusión de las Rutas de Autenticación (Login, Registro, etc.) ---
 require __DIR__.'/../../../routes/auth.php';
@@ -12662,6 +12970,196 @@ class WorkOrderController extends Controller
         $workOrder->save();
     }
 }
+</file>
+
+<file path="config/app.php">
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Name
+    |--------------------------------------------------------------------------
+    |
+    | This value is the name of your application, which will be used when the
+    | framework needs to place the application's name in a notification or
+    | other UI elements where an application name needs to be displayed.
+    |
+    */
+
+    'name' => env('APP_NAME', 'Laravel'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Environment
+    |--------------------------------------------------------------------------
+    |
+    | This value determines the "environment" your application is currently
+    | running in. This may determine how you prefer to configure various
+    | services the application utilizes. Set this in your ".env" file.
+    |
+    */
+
+    'env' => env('APP_ENV', 'production'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Debug Mode
+    |--------------------------------------------------------------------------
+    |
+    | When your application is in debug mode, detailed error messages with
+    | stack traces will be shown on every error that occurs within your
+    | application. If disabled, a simple generic error page is shown.
+    |
+    */
+
+    'debug' => (bool) env('APP_DEBUG', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used by the console to properly generate URLs when using
+    | the Artisan command line tool. You should set this to the root of
+    | the application so that it's available within Artisan commands.
+    |
+    */
+
+    'url' => env('APP_URL', 'http://localhost'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify the default timezone for your application, which
+    | will be used by the PHP date and date-time functions. The timezone
+    | is set to "UTC" by default as it is suitable for most use cases.
+    |
+    */
+
+    'timezone' => 'America/Argentina/Buenos_Aires',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Locale Configuration
+    |--------------------------------------------------------------------------
+    |
+    | The application locale determines the default locale that will be used
+    | by Laravel's translation / localization methods. This option can be
+    | set to any locale for which you plan to have translation strings.
+    |
+    */
+
+    'locale' => env('APP_LOCALE', 'en'),
+
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+
+    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Encryption Key
+    |--------------------------------------------------------------------------
+    |
+    | This key is utilized by Laravel's encryption services and should be set
+    | to a random, 32 character string to ensure that all encrypted values
+    | are secure. You should do this prior to deploying the application.
+    |
+    */
+
+    'cipher' => 'AES-256-CBC',
+
+    'key' => env('APP_KEY'),
+
+    'previous_keys' => [
+        ...array_filter(
+            explode(',', (string) env('APP_PREVIOUS_KEYS', ''))
+        ),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Maintenance Mode Driver
+    |--------------------------------------------------------------------------
+    |
+    | These configuration options determine the driver used to determine and
+    | manage Laravel's "maintenance mode" status. The "cache" driver will
+    | allow maintenance mode to be controlled across multiple machines.
+    |
+    | Supported drivers: "file", "cache"
+    |
+    */
+
+    'maintenance' => [
+        'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
+        'store' => env('APP_MAINTENANCE_STORE', 'database'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Autoloaded Service Providers
+    |--------------------------------------------------------------------------
+    |
+    | The service providers listed here will be automatically loaded on the
+    | request to your application. Feel free to add your own services to
+    | this array to grant expanded functionality to your applications.
+    |
+    */
+
+    'providers' => [
+
+        /*
+         * Laravel Framework Service Providers...
+         */
+        Illuminate\Auth\AuthServiceProvider::class,
+        Illuminate\Broadcasting\BroadcastServiceProvider::class,
+        Illuminate\Bus\BusServiceProvider::class,
+        Illuminate\Cache\CacheServiceProvider::class,
+        Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
+        Illuminate\Cookie\CookieServiceProvider::class,
+        Illuminate\Database\DatabaseServiceProvider::class,
+        Illuminate\Encryption\EncryptionServiceProvider::class,
+        Illuminate\Filesystem\FilesystemServiceProvider::class,
+        Illuminate\Foundation\Providers\FoundationServiceProvider::class,
+        Illuminate\Hashing\HashServiceProvider::class,
+        Illuminate\Mail\MailServiceProvider::class,
+        Illuminate\Notifications\NotificationServiceProvider::class,
+        Illuminate\Pagination\PaginationServiceProvider::class,
+        Illuminate\Pipeline\PipelineServiceProvider::class,
+        Illuminate\Queue\QueueServiceProvider::class,
+        Illuminate\Redis\RedisServiceProvider::class,
+        Illuminate\Auth\Passwords\PasswordResetServiceProvider::class,
+        Illuminate\Session\SessionServiceProvider::class,
+        Illuminate\Translation\TranslationServiceProvider::class,
+        Illuminate\Validation\ValidationServiceProvider::class,
+        Illuminate\View\ViewServiceProvider::class,
+
+        /*
+         * Package Service Providers...
+         */
+
+        /*
+         * Application Service Providers...
+         */
+        App\Providers\AppServiceProvider::class,
+        //App\Providers\AuthServiceProvider::class,
+        //App\Providers\BroadcastServiceProvider::class,
+        //App\Providers\EventServiceProvider::class,
+        //App\Providers\RouteServiceProvider::class,
+        
+        /*
+         * Módulos de la Aplicación FlipperBox
+         */
+        // FlipperBox\Core\Providers\CoreServiceProvider::class,
+        // FlipperBox\Crm\Providers\CrmServiceProvider::class,
+        // FlipperBox\MechanicPanel\Providers\MechanicPanelServiceProvider::class,
+
+    ],
+
+];
 </file>
 
 <file path="src/Inventory/Http/Controllers/ProductController.php">
@@ -12930,6 +13428,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         "php": "^8.2",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "spatie/laravel-permission": "^6.22",
@@ -13031,6 +13530,7 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import Sidebar from '@/Components/Sidebar.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
+import NotificationBell from '@/Components/NotificationBell.vue';
 
 const showingNavigationDropdown = ref(false);
 
@@ -13099,26 +13599,41 @@ const can = (permission) => {
             <!-- Barra de Navegación Superior -->
             <header class="z-10 py-4 bg-white shadow-md">
                 <div class="container flex items-center justify-between h-full px-6 mx-auto">
+                    <!-- Botón Hamburguesa -->
                     <button @click="showingNavigationDropdown = !showingNavigationDropdown" class="p-1 -ml-1 mr-5 rounded-md md:hidden focus:outline-none">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                        </svg>
                     </button>
+                    
+                    <!-- Placeholder para empujar los menús a la derecha -->
                     <div class="flex-1"></div>
-                    <div class="hidden sm:flex sm:items-center sm:ms-6">
-                        <div class="ms-3 relative">
-                            <Dropdown align="right" width="48">
-                                <template #trigger>
-                                    <span class="inline-flex rounded-md">
-                                        <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                            {{ $page.props.auth.user.name }}
-                                            <svg class="ms-2 -me-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                                        </button>
-                                    </span>
-                                </template>
-                                <template #content>
-                                    <DropdownLink :href="route('profile.edit')"> Perfil </DropdownLink>
-                                    <DropdownLink :href="route('logout')" method="post" as="button"> Cerrar Sesión </DropdownLink>
-                                </template>
-                            </Dropdown>
+
+                    <!-- Iconos de la derecha (Campanita y Menú de Usuario) -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Campanita de Notificaciones -->
+                        <NotificationBell :initial-notifications="$page.props.notifications || []" />
+                        
+                        <!-- Menú de Usuario (Dropdown) -->
+                        <div class="hidden sm:flex sm:items-center">
+                            <div class="relative">
+                                <Dropdown align="right" width="48">
+                                    <template #trigger>
+                                        <span class="inline-flex rounded-md">
+                                            <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                                {{ $page.props.auth.user.name }}
+                                                <svg class="ms-2 -me-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </template>
+                                    <template #content>
+                                        <DropdownLink :href="route('profile.edit')"> Perfil </DropdownLink>
+                                        <DropdownLink :href="route('logout')" method="post" as="button"> Cerrar Sesión </DropdownLink>
+                                    </template>
+                                </Dropdown>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -13145,6 +13660,7 @@ const can = (permission) => {
 return [
     App\Providers\AppServiceProvider::class,
     App\Providers\PolicyServiceProvider::class,
+    App\Providers\BroadcastServiceProvider::class,
     FlipperBox\ClientScheduling\Providers\ClientSchedulingServiceProvider::class,
     FlipperBox\ClientPortal\Providers\ClientPortalServiceProvider::class,
     FlipperBox\Core\Providers\CoreServiceProvider::class,

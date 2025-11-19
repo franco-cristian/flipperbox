@@ -5,6 +5,7 @@ namespace FlipperBox\Core\Http\Controllers;
 use App\Http\Controllers\Controller;
 use FlipperBox\Inventory\Models\Product;
 use FlipperBox\WorkManagement\Models\WorkOrder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,15 +13,18 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        // --- MÉTRICA 1: RESUMEN FINANCIERO DEL MES ACTUAL ---
-        $ingresosMes = WorkOrder::where('status', 'Completada')
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        // --- MÉTRICA 1: RESUMEN FINANCIERO (CON CASTEO A FLOAT) ---
+        $ingresosMes = (float) WorkOrder::where('status', 'Completada')
             ->whereMonth('completion_date', now()->month)
             ->whereYear('completion_date', now()->year)
             ->sum('total');
 
-        // --- MÉTRICA 2: ACTIVIDAD DEL TALLER (CHART.JS) ---
+        // --- MÉTRICA 2: ACTIVIDAD DEL TALLER ---
         $activityData = WorkOrder::select(
                 DB::raw('DATE(completion_date) as date'),
                 DB::raw('count(*) as count')
@@ -32,7 +36,6 @@ class DashboardController extends Controller
             ->get()
             ->pluck('count', 'date');
 
-        // Preparamos el array completo de los últimos 30 días para el gráfico
         $dailyActivityChart = [];
         for ($i = 29; $i >= 0; $i--) {
             $date = now()->subDays($i)->format('Y-m-d');
@@ -64,7 +67,7 @@ class DashboardController extends Controller
 
         // --- MÉTRICA 5: ESTADO DE ÓRDENES DE TRABAJO (GRÁFICO CIRCULAR) ---
         $workOrderStatus = WorkOrder::select('status', DB::raw('count(*) as count'))
-            ->where('created_at', '>=', now()->subDays(30)) // Órdenes creadas en los últimos 30 días
+            ->where('created_at', '>=', now()->subDays(30))
             ->groupBy('status')
             ->get()
             ->pluck('count', 'status');
@@ -73,6 +76,9 @@ class DashboardController extends Controller
             'labels' => $workOrderStatus->keys(),
             'data' => $workOrderStatus->values(),
         ];
+        
+        // --- DATOS PARA NOTIFICACIONES ---
+        $notifications = $user->unreadNotifications()->limit(5)->get();
 
         return Inertia::render('Dashboard', [
             'ingresosMes' => $ingresosMes,
@@ -80,6 +86,7 @@ class DashboardController extends Controller
             'topProducts' => $topProducts,
             'lowStockProducts' => $lowStockProducts,
             'workOrderStatusChart' => $workOrderStatusChart,
+            'notifications' => $notifications,
         ]);
     }
 }
