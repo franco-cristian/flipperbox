@@ -3,6 +3,7 @@
 namespace FlipperBox\ClientScheduling\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ReservationConfirmed;
 use App\Models\User;
 use App\Notifications\ReservationCreated;
 use FlipperBox\Scheduling\Models\DailyCapacity;
@@ -11,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,7 +44,7 @@ class BookingController extends Controller
             ->where('date', '>=', today())
             ->orderBy('date')
             ->get()
-            ->map(fn ($capacity) => [
+            ->map(fn($capacity) => [
                 'date' => $capacity->date->format('Y-m-d'),
                 'available_slots' => $capacity->total_slots - $capacity->booked_slots,
             ]);
@@ -54,7 +56,7 @@ class BookingController extends Controller
                 $reservationDate = Carbon::parse($reservation->reservation_date)->startOfDay();
                 $now = Carbon::now()->startOfDay();
                 $hoursDifference = $now->diffInHours($reservationDate, false);
-                
+
                 return [
                     'id' => $reservation->id,
                     'reservation_date' => $reservation->reservation_date->format('Y-m-d'),
@@ -137,7 +139,7 @@ class BookingController extends Controller
 
             return $newReservation; // Devolvemos la reserva creada desde la transacción
         });
-        
+
         // --- NUEVO SISTEMA DE NOTIFICACIONES ---
         // 1. Buscamos a los usuarios que tienen permiso de ver reservas (Admins)
         $admins = User::permission('gestionar reservas')->get();
@@ -147,7 +149,10 @@ class BookingController extends Controller
             $admin->notify(new ReservationCreated($reservation));
         }
 
-        return to_route('cliente.dashboard')->with('success', '¡Tu reserva ha sido confirmada! Te esperamos.');
+        // 3. Enviar Email al Cliente (NUEVO CÓDIGO)
+        Mail::to($user)->send(new ReservationConfirmed($reservation));
+
+        return back()->with('success', '¡Tu reserva ha sido confirmada! Te esperamos.');
     }
 
     public function destroy(Reservation $reservation): RedirectResponse
@@ -158,7 +163,7 @@ class BookingController extends Controller
         if ($reservation->user_id !== $user->id) {
             return back()->with('error', 'No tienes permiso para cancelar esta reserva.');
         }
-        
+
         if ($reservation->status !== 'Confirmada') {
             return back()->with('error', 'Esta reserva no se puede cancelar.');
         }

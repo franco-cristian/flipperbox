@@ -52,9 +52,9 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
             ],
-            // Comparte las notificaciones no leídas en cada petición si el usuario está logueado.
+            // Comparte las notificaciones en cada petición si el usuario está logueado.
             'notifications' => $request->user()
-                ? $request->user()->unreadNotifications()->limit(10)->get()
+                ? $request->user()->notifications()->limit(5)->get()
                 : [],
         ];
     }
