@@ -51,9 +51,9 @@ const markAsRead = () => {
 
 // Función opcional para reproducir sonido de notificación
 //const playNotificationSound = () => {
-    // implementar un sonido de notificación aquí
-    // const audio = new Audio('/sounds/notification.mp3');
-    // audio.play().catch(e => console.log('Error reproduciendo sonido:', e));
+// implementar un sonido de notificación aquí
+// const audio = new Audio('/sounds/notification.mp3');
+// audio.play().catch(e => console.log('Error reproduciendo sonido:', e));
 //};
 </script>
 

@@ -45,7 +45,7 @@
       "eslint --fix"
     ],
     "**/*.php": [
-      "./vendor/bin/pint"
+      "php vendor/bin/pint"
     ]
   }
 }
