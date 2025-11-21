@@ -8,6 +8,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import Sidebar from '@/Components/Sidebar.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
 import NotificationBell from '@/Components/NotificationBell.vue';
+import ChatbotWidget from '@/Components/ChatbotWidget.vue';
 
 const showingNavigationDropdown = ref(false);
 
@@ -153,5 +154,7 @@ const can = (permission) => {
                 <slot />
             </main>
         </div>
+        <!-- CHATBOT WIDGET -->
+        <ChatbotWidget />
     </div>
 </template>

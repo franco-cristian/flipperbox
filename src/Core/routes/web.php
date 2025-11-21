@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use FlipperBox\Core\Http\Controllers\ChatbotController;
 use FlipperBox\Core\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
@@ -45,6 +46,9 @@ Route::post('/notifications/mark-as-read', function (Request $request) {
 
     return back();
 })->middleware('auth')->name('notifications.markAsRead');
+
+// Ruta del Chatbot (Pública)
+Route::post('/chatbot/ask', [ChatbotController::class, 'handle'])->name('chatbot.ask');
 
 // --- Inclusión de las Rutas de Autenticación (Login, Registro, etc.) ---
 require __DIR__.'/../../../routes/auth.php';

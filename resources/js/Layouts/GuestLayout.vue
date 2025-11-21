@@ -1,5 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
+import ChatbotWidget from '@/Components/ChatbotWidget.vue';
 </script>
 
 <template>
@@ -35,5 +36,8 @@ import { Link } from '@inertiajs/vue3';
         >
             <slot />
         </div>
+
+        <!-- CHATBOT WIDGET -->
+        <ChatbotWidget />
     </div>
 </template>

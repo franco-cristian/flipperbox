@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import { useDarkMode } from '@/Composables/useDarkMode';
+import ChatbotWidget from '@/Components/ChatbotWidget.vue';
 
 defineProps({
     canLogin: Boolean,
@@ -136,5 +137,6 @@ const { isDark, toggleDarkMode } = useDarkMode();
         <footer class="relative z-10 mt-20 py-6 text-center text-gray-500 text-sm">
             &copy; {{ new Date().getFullYear() }} Flipper Servicios. Av. Gendarmería Nacional 2758, Formosa.
         </footer>
+        <ChatbotWidget />
     </div>
 </template>
