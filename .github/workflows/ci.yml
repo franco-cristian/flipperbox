@@ -20,11 +20,23 @@ jobs:
         extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
         coverage: none
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-    - name: Install Dependencies
+    - name: Install Composer Dependencies
       run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+    - name: Install NPM Dependencies
+      run: npm ci
+
+    - name: Build Frontend Assets
+      run: npm run build
 
     - name: Generate Key
       run: php artisan key:generate
@@ -46,7 +58,7 @@ jobs:
     - name: Check Code Style (Pint)
       run: ./vendor/bin/pint --test
 
-  frontend-checks:
+  frontend-lint:
     runs-on: ubuntu-latest
 
     steps:
@@ -66,6 +78,3 @@ jobs:
       
     - name: Check Formatting (Prettier)
       run: npx prettier --check "resources/js/**/*.{js,vue}"
-
-    - name: Build Assets
-      run: npm run build
