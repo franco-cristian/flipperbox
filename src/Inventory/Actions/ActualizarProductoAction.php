@@ -1,4 +1,5 @@
 <?php
+
 namespace FlipperBox\Inventory\Actions;
 
 use FlipperBox\Inventory\Models\Product;
@@ -19,7 +20,7 @@ class ActualizarProductoAction
             $product->suppliers()->updateExistingPivot($data['supplier_id'], [
                 'cost' => $data['cost'],
             ]);
-            
+
             Log::info("Producto actualizado: ID {$product->id} - {$product->name}");
 
             return $product;

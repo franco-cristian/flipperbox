@@ -22,7 +22,7 @@ const deleteVehicle = () => {
     });
 };
 
-const closeModal = () => confirmingVehicleDeletion.value = false;
+const closeModal = () => (confirmingVehicleDeletion.value = false);
 </script>
 <template>
     <Head title="Mis Vehículos" />
@@ -30,7 +30,10 @@ const closeModal = () => confirmingVehicleDeletion.value = false;
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Mis Vehículos</h2>
-                <Link :href="route('cliente.vehiculos.create')" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
+                <Link
+                    :href="route('cliente.vehiculos.create')"
+                    class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition"
+                >
                     Agregar Nuevo Vehículo
                 </Link>
             </div>
@@ -51,18 +54,35 @@ const closeModal = () => confirmingVehicleDeletion.value = false;
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="vehiculo in vehiculos.data" :key="vehiculo.id" class="bg-white border-b hover:bg-gray-50">
-                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ vehiculo.patente }}</th>
+                                    <tr
+                                        v-for="vehiculo in vehiculos.data"
+                                        :key="vehiculo.id"
+                                        class="bg-white border-b hover:bg-gray-50"
+                                    >
+                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                            {{ vehiculo.patente }}
+                                        </th>
                                         <td class="px-6 py-4">{{ vehiculo.marca }}</td>
                                         <td class="px-6 py-4">{{ vehiculo.modelo }}</td>
                                         <td class="px-6 py-4">{{ vehiculo.anio }}</td>
                                         <td class="px-6 py-4 text-right">
-                                            <Link :href="route('cliente.vehiculos.edit', vehiculo.id)" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
-                                            <button @click="confirmVehicleDeletion(vehiculo)" class="font-medium text-red-600 hover:underline">Eliminar</button>
+                                            <Link
+                                                :href="route('cliente.vehiculos.edit', vehiculo.id)"
+                                                class="font-medium text-blue-600 hover:underline mr-4"
+                                                >Editar</Link
+                                            >
+                                            <button
+                                                class="font-medium text-red-600 hover:underline"
+                                                @click="confirmVehicleDeletion(vehiculo)"
+                                            >
+                                                Eliminar
+                                            </button>
                                         </td>
                                     </tr>
                                     <tr v-if="vehiculos.data.length === 0">
-                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">No tienes vehículos registrados. ¡Agrega tu primero!</td>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                            No tienes vehículos registrados. ¡Agrega tu primero!
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -74,12 +94,12 @@ const closeModal = () => confirmingVehicleDeletion.value = false;
                 </div>
             </div>
         </div>
-        <ConfirmationModal 
-            :show="confirmingVehicleDeletion" 
-            @close="closeModal"
-            @confirm="deleteVehicle"
+        <ConfirmationModal
+            :show="confirmingVehicleDeletion"
             title="Eliminar Vehículo"
             :message="`¿Estás seguro de que deseas eliminar tu vehículo con patente ${vehicleToDelete?.patente}?`"
+            @close="closeModal"
+            @confirm="deleteVehicle"
         />
     </AuthenticatedLayout>
 </template>

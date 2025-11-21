@@ -2,11 +2,11 @@
 
 namespace FlipperBox\Inventory\Models;
 
+use FlipperBox\WorkManagement\Models\WorkOrder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use FlipperBox\WorkManagement\Models\WorkOrder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
@@ -51,6 +51,7 @@ class Product extends Model
     {
         $costWithIva = $this->cost * (1 + ($this->iva_percentage / 100));
         $price = $costWithIva * (1 + ($this->profit_margin / 100));
+
         return round($price, 2);
     }
 

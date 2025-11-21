@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use FlipperBox\Crm\Models\Vehiculo;
 use FlipperBox\Inventory\Models\Product;
 use FlipperBox\Inventory\Models\Supplier;
 use FlipperBox\WorkManagement\Models\Service;
 use FlipperBox\WorkManagement\Models\WorkOrder;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -59,10 +59,10 @@ class DemoSeeder extends Seeder
         $clienteRole = Role::create(['name' => 'Cliente', 'guard_name' => $guard]);
 
         // --- ASIGNACIÓN DE PERMISOS A ROLES ---
-        
+
         // Usamos Permission::all() y luego removemos los permisos del cliente
         $todosLosPermisos = Permission::all();
-        
+
         // Admin: todos los permisos EXCEPTO los del cliente
         $permisosAdmin = $todosLosPermisos->reject(function ($permiso) {
             return in_array($permiso->name, ['ver mis vehiculos', 'solicitar reserva']);
@@ -71,7 +71,7 @@ class DemoSeeder extends Seeder
 
         // Mecánico: permisos específicos
         $mecanicoRole->givePermissionTo(['ver clientes', 'ver inventario', 'ver ordenes de trabajo']);
-        
+
         // Cliente: solo sus permisos específicos
         $clienteRole->givePermissionTo(['ver mis vehiculos', 'solicitar reserva']);
 
@@ -117,7 +117,7 @@ class DemoSeeder extends Seeder
         foreach ($productosData as $data) {
             $costWithIva = $data['cost'] * (1 + ($data['iva_percentage'] / 100));
             $price = $costWithIva * (1 + ($data['profit_margin'] / 100));
-            
+
             $product = Product::create([
                 'name' => $data['name'], 'sku' => $data['sku'], 'cost' => $data['cost'], 'iva_percentage' => $data['iva_percentage'],
                 'profit_margin' => $data['profit_margin'], 'price' => round($price, 2), 'current_stock' => $data['current_stock'], 'min_threshold' => $data['min_threshold'],
@@ -147,10 +147,10 @@ class DemoSeeder extends Seeder
                 'description' => 'Servicio completo de 50.000km.',
                 'completion_date' => now(),
             ]);
-            
+
             $ordenCompletada->products()->attach($filtroAceite->id, ['quantity' => 1, 'unit_price' => $filtroAceite->price]);
             $ordenCompletada->services()->attach($servicioCambioAceite->id, ['price' => $servicioCambioAceite->price]);
-            
+
             $total = ($filtroAceite->price * 1) + $servicioCambioAceite->price;
             $ordenCompletada->update(['total' => $total]);
 

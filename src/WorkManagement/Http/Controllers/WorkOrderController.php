@@ -23,6 +23,7 @@ class WorkOrderController extends Controller
     {
         // La relación 'vehicle.cliente' ahora es 'vehicle.user' debido a la refactorización
         $workOrders = WorkOrder::with(['vehicle.cliente', 'mechanic'])->latest('entry_date')->paginate(15);
+
         return Inertia::render('WorkManagement/Index', ['workOrders' => $workOrders]);
     }
 
@@ -36,6 +37,7 @@ class WorkOrderController extends Controller
     {
         $validated = $request->validate(['vehicle_id' => ['required', 'exists:vehiculos,id'], 'description' => ['required', 'string']]);
         $workOrder = WorkOrder::create($validated);
+
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Orden de Trabajo creada exitosamente.');
     }
 
@@ -104,7 +106,7 @@ class WorkOrderController extends Controller
         DB::transaction(function () use ($validated, $workOrder) {
             $product = Product::lockForUpdate()->find($validated['product_id']);
             if ($product->current_stock < $validated['quantity']) {
-                throw ValidationException::withMessages(['quantity' => 'Stock insuficiente. Stock actual: ' . $product->current_stock]);
+                throw ValidationException::withMessages(['quantity' => 'Stock insuficiente. Stock actual: '.$product->current_stock]);
             }
             $product->decrement('current_stock', $validated['quantity']);
             $existingProduct = $workOrder->products()->where('product_id', $product->id)->first();
@@ -116,6 +118,7 @@ class WorkOrderController extends Controller
             }
             $this->recalculateTotal($workOrder);
         });
+
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Producto agregado.');
     }
 
@@ -123,10 +126,11 @@ class WorkOrderController extends Controller
     {
         $validated = $request->validate(['service_id' => ['required', 'exists:services,id']]);
         $service = Service::find($validated['service_id']);
-        if (!$workOrder->services()->where('service_id', $service->id)->exists()) {
+        if (! $workOrder->services()->where('service_id', $service->id)->exists()) {
             $workOrder->services()->attach($service->id, ['price' => $service->price]);
             $this->recalculateTotal($workOrder);
         }
+
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Servicio agregado.');
     }
 
@@ -135,11 +139,12 @@ class WorkOrderController extends Controller
         $validated = $request->validate([
             'description' => ['required', 'string', 'max:255'],
             'cost' => ['required', 'numeric', 'min:0'],
-            'price' => ['required', 'numeric', 'min:0']
+            'price' => ['required', 'numeric', 'min:0'],
         ]);
         $workOrder->externalCosts()->create($validated);
         $workOrder->load('externalCosts');
         $this->recalculateTotal($workOrder);
+
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Costo externo agregado.');
     }
 
@@ -149,8 +154,9 @@ class WorkOrderController extends Controller
         $validated = $request->validate(['mechanic_id' => ['nullable', 'exists:users,id']]);
         $workOrder->update([
             'mechanic_id' => $validated['mechanic_id'],
-            'status' => $workOrder->status === 'Pendiente' && $validated['mechanic_id'] ? 'En Progreso' : $workOrder->status
+            'status' => $workOrder->status === 'Pendiente' && $validated['mechanic_id'] ? 'En Progreso' : $workOrder->status,
         ]);
+
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Mecánico asignado/actualizado.');
     }
 
@@ -166,6 +172,7 @@ class WorkOrderController extends Controller
                 $this->recalculateTotal($workOrder);
             }
         });
+
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Producto eliminado de la orden.');
     }
 
@@ -173,6 +180,7 @@ class WorkOrderController extends Controller
     {
         $workOrder->services()->detach($service->id);
         $this->recalculateTotal($workOrder);
+
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Servicio eliminado de la orden.');
     }
 
@@ -182,6 +190,7 @@ class WorkOrderController extends Controller
         $externalCost->delete();
         $workOrder->load('externalCosts');
         $this->recalculateTotal($workOrder);
+
         return to_route('work-orders.show', $workOrder->id)->with('success', 'Costo externo eliminado de la orden.');
     }
 
@@ -189,7 +198,7 @@ class WorkOrderController extends Controller
     private function recalculateTotal(WorkOrder $workOrder)
     {
         $workOrder->load(['products', 'services', 'externalCosts']);
-        $totalProducts = $workOrder->products->sum(fn($p) => $p->pivot->unit_price * $p->pivot->quantity);
+        $totalProducts = $workOrder->products->sum(fn ($p) => $p->pivot->unit_price * $p->pivot->quantity);
         $totalServices = $workOrder->services->sum('pivot.price');
         $totalExternalCosts = $workOrder->externalCosts->sum('price');
         $workOrder->total = $totalProducts + $totalServices + $totalExternalCosts;

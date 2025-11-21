@@ -15,7 +15,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class WorkOrder extends Model
 {
     use HasFactory, SoftDeletes;
+
     protected $fillable = ['vehicle_id', 'mechanic_id', 'status', 'description', 'notes', 'entry_date', 'completion_date', 'total'];
+
     protected $casts = ['entry_date' => 'datetime', 'completion_date' => 'datetime'];
 
     public function vehicle(): BelongsTo

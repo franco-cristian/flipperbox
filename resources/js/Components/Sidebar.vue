@@ -13,7 +13,11 @@ const navigationLinks = ref([
     { name: 'Gestión de Cupos', href: route('admin.scheduling.capacities.index'), permission: 'gestionar cupos' },
     { name: 'Mis Vehículos', href: route('cliente.vehiculos.index'), permission: 'ver mis vehiculos' },
     { name: 'Solicitar Reserva', href: route('cliente.reservations.index'), permission: 'solicitar reserva' },
-    { name: 'Gestión de Reservas', href: route('admin.scheduling.reservations.index'), permission: 'gestionar reservas' },
+    {
+        name: 'Gestión de Reservas',
+        href: route('admin.scheduling.reservations.index'),
+        permission: 'gestionar reservas',
+    },
 ]);
 
 // Creamos una función helper para verificar permisos
@@ -31,7 +35,7 @@ const can = (permission) => {
                 <ApplicationLogo class="block h-12 w-auto" />
             </Link>
         </div>
-        
+
         <!-- Links de Navegación (Ahora generados dinámicamente) -->
         <nav class="flex-1">
             <template v-for="link in navigationLinks" :key="link.name">
@@ -40,8 +44,12 @@ const can = (permission) => {
                     v-if="can(link.permission)"
                     :href="link.href"
                     :class="{
-                        'bg-gray-100 text-gray-900': $page.url.startsWith(link.href.substring(link.href.lastIndexOf('/'))),
-                        'text-gray-600 hover:bg-gray-100 hover:text-gray-900': !$page.url.startsWith(link.href.substring(link.href.lastIndexOf('/')))
+                        'bg-gray-100 text-gray-900': $page.url.startsWith(
+                            link.href.substring(link.href.lastIndexOf('/'))
+                        ),
+                        'text-gray-600 hover:bg-gray-100 hover:text-gray-900': !$page.url.startsWith(
+                            link.href.substring(link.href.lastIndexOf('/'))
+                        ),
                     }"
                     class="flex items-center px-4 py-2 mt-2 transition-colors duration-300 transform rounded-md"
                 >

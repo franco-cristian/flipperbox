@@ -19,7 +19,7 @@ class VehiculoController extends Controller
      */
     public function create(User $user): Response
     {
-        abort_if(!$user->hasRole('Cliente'), 404);
+        abort_if(! $user->hasRole('Cliente'), 404);
 
         return Inertia::render('Crm/Vehiculos/Create', [
             'cliente' => $user,
@@ -31,13 +31,13 @@ class VehiculoController extends Controller
      */
     public function store(Request $request, User $user): RedirectResponse
     {
-        abort_if(!$user->hasRole('Cliente'), 404);
+        abort_if(! $user->hasRole('Cliente'), 404);
 
         $validated = $request->validate([
             'patente' => ['required', 'string', 'max:255', 'unique:vehiculos,patente'],
             'marca' => ['required', 'string', 'max:255'],
             'modelo' => ['required', 'string', 'max:255'],
-            'anio' => ['required', 'integer', 'min:1950', 'max:' . date('Y')],
+            'anio' => ['required', 'integer', 'min:1950', 'max:'.date('Y')],
             'kilometraje' => ['nullable', 'integer', 'min:0'],
             'vin' => ['nullable', 'string', 'max:255', 'unique:vehiculos,vin'],
             'numero_motor' => ['nullable', 'string', 'max:255'],
@@ -56,7 +56,7 @@ class VehiculoController extends Controller
      */
     public function edit(User $user, Vehiculo $vehiculo): Response
     {
-        abort_if(!$user->hasRole('Cliente'), 404);
+        abort_if(! $user->hasRole('Cliente'), 404);
 
         return Inertia::render('Crm/Vehiculos/Edit', [
             'cliente' => $user,
@@ -70,6 +70,7 @@ class VehiculoController extends Controller
     public function update(UpdateVehiculoRequest $request, User $user, Vehiculo $vehiculo): RedirectResponse
     {
         $vehiculo->update($request->validated());
+
         return to_route('clientes.show', $user->id)->with('success', 'Vehículo actualizado exitosamente.');
     }
 
@@ -83,6 +84,7 @@ class VehiculoController extends Controller
         } catch (ValidationException $e) {
             return back()->with('error', $e->validator->errors()->first());
         }
+
         return to_route('clientes.show', $user->id)->with('success', 'Vehículo eliminado exitosamente.');
     }
 }

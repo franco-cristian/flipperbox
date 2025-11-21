@@ -31,8 +31,8 @@ const calculatedPrice = computed(() => {
     const cost = parseFloat(form.cost) || 0;
     const ivaPercentage = parseFloat(form.iva_percentage) || 0;
     const profitMargin = parseFloat(form.profit_margin) || 0;
-    const costWithIva = cost * (1 + (ivaPercentage / 100));
-    const finalPrice = costWithIva * (1 + (profitMargin / 100));
+    const costWithIva = cost * (1 + ivaPercentage / 100);
+    const finalPrice = costWithIva * (1 + profitMargin / 100);
     return finalPrice.toFixed(2);
 });
 
@@ -65,62 +65,144 @@ const submit = () => {
                             <h3 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Datos del Producto</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="md:col-span-2">
-                                    <label for="name" class="block font-medium text-sm text-gray-700">Nombre del Producto</label>
-                                    <input id="name" type="text" v-model="form.name" class="mt-1 block w-full" required autofocus />
-                                    <div v-if="form.errors.name" class="text-sm text-red-600 mt-1">{{ form.errors.name }}</div>
+                                    <label for="name" class="block font-medium text-sm text-gray-700"
+                                        >Nombre del Producto</label
+                                    >
+                                    <input
+                                        id="name"
+                                        v-model="form.name"
+                                        type="text"
+                                        class="mt-1 block w-full"
+                                        required
+                                        autofocus
+                                    />
+                                    <div v-if="form.errors.name" class="text-sm text-red-600 mt-1">
+                                        {{ form.errors.name }}
+                                    </div>
                                 </div>
                                 <div>
-                                    <label for="sku" class="block font-medium text-sm text-gray-700">SKU (Código Único)</label>
-                                    <input id="sku" type="text" v-model="form.sku" class="mt-1 block w-full" required />
-                                    <div v-if="form.errors.sku" class="text-sm text-red-600 mt-1">{{ form.errors.sku }}</div>
+                                    <label for="sku" class="block font-medium text-sm text-gray-700"
+                                        >SKU (Código Único)</label
+                                    >
+                                    <input id="sku" v-model="form.sku" type="text" class="mt-1 block w-full" required />
+                                    <div v-if="form.errors.sku" class="text-sm text-red-600 mt-1">
+                                        {{ form.errors.sku }}
+                                    </div>
                                 </div>
                                 <div>
-                                    <label for="supplier_id" class="block font-medium text-sm text-gray-700">Proveedor Principal</label>
-                                    <select id="supplier_id" v-model="form.supplier_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
-                                        <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">{{ supplier.name }}</option>
+                                    <label for="supplier_id" class="block font-medium text-sm text-gray-700"
+                                        >Proveedor Principal</label
+                                    >
+                                    <select
+                                        id="supplier_id"
+                                        v-model="form.supplier_id"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        required
+                                    >
+                                        <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
+                                            {{ supplier.name }}
+                                        </option>
                                     </select>
-                                    <div v-if="form.errors.supplier_id" class="text-sm text-red-600 mt-1">{{ form.errors.supplier_id }}</div>
+                                    <div v-if="form.errors.supplier_id" class="text-sm text-red-600 mt-1">
+                                        {{ form.errors.supplier_id }}
+                                    </div>
                                 </div>
                             </div>
                             <div class="mt-6">
-                                <label for="description" class="block font-medium text-sm text-gray-700">Descripción (Opcional)</label>
-                                <textarea id="description" v-model="form.description" rows="3" class="mt-1 block w-full"></textarea>
+                                <label for="description" class="block font-medium text-sm text-gray-700"
+                                    >Descripción (Opcional)</label
+                                >
+                                <textarea
+                                    id="description"
+                                    v-model="form.description"
+                                    rows="3"
+                                    class="mt-1 block w-full"
+                                ></textarea>
                             </div>
 
                             <!-- SECCIÓN 2: PRECIOS Y STOCK -->
                             <h3 class="text-lg font-medium text-gray-900 mt-8 mb-4 border-b pb-2">Precios y Stock</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <div>
-                                    <label for="cost" class="block font-medium text-sm text-gray-700">Precio de Costo ($)</label>
-                                    <input id="cost" type="number" step="0.01" v-model="form.cost" class="mt-1 block w-full" required />
-                                    <div v-if="form.errors.cost" class="text-sm text-red-600 mt-1">{{ form.errors.cost }}</div>
+                                    <label for="cost" class="block font-medium text-sm text-gray-700"
+                                        >Precio de Costo ($)</label
+                                    >
+                                    <input
+                                        id="cost"
+                                        v-model="form.cost"
+                                        type="number"
+                                        step="0.01"
+                                        class="mt-1 block w-full"
+                                        required
+                                    />
+                                    <div v-if="form.errors.cost" class="text-sm text-red-600 mt-1">
+                                        {{ form.errors.cost }}
+                                    </div>
                                 </div>
                                 <div>
-                                    <label for="iva_percentage" class="block font-medium text-sm text-gray-700">IVA (%)</label>
-                                    <input id="iva_percentage" type="number" v-model="form.iva_percentage" class="mt-1 block w-full" required />
+                                    <label for="iva_percentage" class="block font-medium text-sm text-gray-700"
+                                        >IVA (%)</label
+                                    >
+                                    <input
+                                        id="iva_percentage"
+                                        v-model="form.iva_percentage"
+                                        type="number"
+                                        class="mt-1 block w-full"
+                                        required
+                                    />
                                 </div>
                                 <div>
-                                    <label for="profit_margin" class="block font-medium text-sm text-gray-700">Margen de Ganancia (%)</label>
-                                    <input id="profit_margin" type="number" v-model="form.profit_margin" class="mt-1 block w-full" required />
+                                    <label for="profit_margin" class="block font-medium text-sm text-gray-700"
+                                        >Margen de Ganancia (%)</label
+                                    >
+                                    <input
+                                        id="profit_margin"
+                                        v-model="form.profit_margin"
+                                        type="number"
+                                        class="mt-1 block w-full"
+                                        required
+                                    />
                                 </div>
                                 <div class="bg-gray-100 p-4 rounded-md flex items-center justify-center">
                                     <div>
-                                        <label class="block font-medium text-sm text-gray-700">Precio de Venta Calculado</label>
+                                        <label class="block font-medium text-sm text-gray-700"
+                                            >Precio de Venta Calculado</label
+                                        >
                                         <p class="text-2xl font-bold text-gray-900 mt-1">${{ calculatedPrice }}</p>
                                     </div>
                                 </div>
                                 <div>
-                                    <label for="current_stock" class="block font-medium text-sm text-gray-700">Stock Actual</label>
-                                    <input id="current_stock" type="number" v-model="form.current_stock" class="mt-1 block w-full" required />
+                                    <label for="current_stock" class="block font-medium text-sm text-gray-700"
+                                        >Stock Actual</label
+                                    >
+                                    <input
+                                        id="current_stock"
+                                        v-model="form.current_stock"
+                                        type="number"
+                                        class="mt-1 block w-full"
+                                        required
+                                    />
                                 </div>
                                 <div>
-                                    <label for="min_threshold" class="block font-medium text-sm text-gray-700">Umbral de Stock Bajo</label>
-                                    <input id="min_threshold" type="number" v-model="form.min_threshold" class="mt-1 block w-full" required />
+                                    <label for="min_threshold" class="block font-medium text-sm text-gray-700"
+                                        >Umbral de Stock Bajo</label
+                                    >
+                                    <input
+                                        id="min_threshold"
+                                        v-model="form.min_threshold"
+                                        type="number"
+                                        class="mt-1 block w-full"
+                                        required
+                                    />
                                 </div>
                             </div>
-                            
+
                             <div class="flex items-center justify-end mt-8">
-                                <button type="submit" class="px-6 py-3 bg-gray-800 text-white rounded-md hover:bg-gray-700 font-semibold" :disabled="form.processing">
+                                <button
+                                    type="submit"
+                                    class="px-6 py-3 bg-gray-800 text-white rounded-md hover:bg-gray-700 font-semibold"
+                                    :disabled="form.processing"
+                                >
                                     Actualizar Producto
                                 </button>
                             </div>

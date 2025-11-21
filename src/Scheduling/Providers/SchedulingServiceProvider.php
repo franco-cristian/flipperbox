@@ -1,4 +1,5 @@
 <?php
+
 namespace FlipperBox\Scheduling\Providers;
 
 use Illuminate\Support\Facades\Route;
@@ -11,11 +12,11 @@ class SchedulingServiceProvider extends ServiceProvider
         Route::middleware(['web', 'auth'])
             ->group(function () {
                 Route::middleware('can:gestionar cupos')
-                     ->prefix('admin/scheduling')
-                     ->name('admin.scheduling.')
-                     ->group(function () {
-                         $this->loadRoutesFrom(__DIR__.'/../routes/admin.php');
-                     });
+                    ->prefix('admin/scheduling')
+                    ->name('admin.scheduling.')
+                    ->group(function () {
+                        $this->loadRoutesFrom(__DIR__.'/../routes/admin.php');
+                    });
             });
     }
 }

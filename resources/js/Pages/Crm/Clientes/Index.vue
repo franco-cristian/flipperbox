@@ -42,9 +42,12 @@ const closeModal = () => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Clientes</h2>
-                <Link v-if="can('crear clientes')" :href="route('clientes.create')"
-                    class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition">
-                Crear Nuevo Cliente
+                <Link
+                    v-if="can('crear clientes')"
+                    :href="route('clientes.create')"
+                    class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition"
+                >
+                    Crear Nuevo Cliente
                 </Link>
             </div>
         </template>
@@ -63,22 +66,41 @@ const closeModal = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="cliente in clientes.data" :key="cliente.id"
-                                        class="bg-white border-b hover:bg-gray-50">
+                                    <tr
+                                        v-for="cliente in clientes.data"
+                                        :key="cliente.id"
+                                        class="bg-white border-b hover:bg-gray-50"
+                                    >
                                         <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                            <Link :href="route('clientes.show', { user: cliente.id })" class="hover:underline text-blue-600">
+                                            <Link
+                                                :href="route('clientes.show', { user: cliente.id })"
+                                                class="hover:underline text-blue-600"
+                                            >
                                                 {{ cliente.name }} {{ cliente.apellido }}
                                             </Link>
                                         </th>
                                         <td class="px-6 py-4">{{ cliente.email }}</td>
                                         <td class="px-6 py-4">{{ cliente.telefono }}</td>
                                         <td class="px-6 py-4 text-right">
-                                            <Link v-if="can('editar clientes')" :href="route('clientes.edit', { user: cliente.id })" class="font-medium text-blue-600 hover:underline mr-4">Editar</Link>
-                                            <button v-if="can('eliminar clientes')" @click="confirmClientDeletion(cliente)" class="font-medium text-red-600 hover:underline">Eliminar</button>
+                                            <Link
+                                                v-if="can('editar clientes')"
+                                                :href="route('clientes.edit', { user: cliente.id })"
+                                                class="font-medium text-blue-600 hover:underline mr-4"
+                                                >Editar</Link
+                                            >
+                                            <button
+                                                v-if="can('eliminar clientes')"
+                                                class="font-medium text-red-600 hover:underline"
+                                                @click="confirmClientDeletion(cliente)"
+                                            >
+                                                Eliminar
+                                            </button>
                                         </td>
                                     </tr>
                                     <tr v-if="clientes.data.length === 0">
-                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">No se encontraron clientes.</td>
+                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                            No se encontraron clientes.
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -91,8 +113,12 @@ const closeModal = () => {
             </div>
         </div>
         <!-- MODAL DE CONFIRMACIÓN -->
-        <ConfirmationModal :show="confirmingClientDeletion" @close="closeModal" @confirm="deleteClient"
+        <ConfirmationModal
+            :show="confirmingClientDeletion"
             title="Eliminar Cliente"
-            :message="`¿Estás seguro de que deseas eliminar a ${clientToDelete?.name} ${clientToDelete?.apellido}? Esta acción no se puede deshacer.`" />
+            :message="`¿Estás seguro de que deseas eliminar a ${clientToDelete?.name} ${clientToDelete?.apellido}? Esta acción no se puede deshacer.`"
+            @close="closeModal"
+            @confirm="deleteClient"
+        />
     </AuthenticatedLayout>
 </template>

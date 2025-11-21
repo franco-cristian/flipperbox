@@ -2,8 +2,8 @@
 
 namespace FlipperBox\Inventory\Actions;
 
-use FlipperBox\Inventory\Models\Product;
 use FlipperBox\Inventory\Models\InventoryMovement;
+use FlipperBox\Inventory\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +14,7 @@ class CrearNuevoProductoAction
     {
         return DB::transaction(function () use ($data) {
             // 1. Instanciamos el modelo y asignamos propiedades
-            $product = new Product();
+            $product = new Product;
             $product->fill($data);
             $product->save();
 
@@ -31,7 +31,7 @@ class CrearNuevoProductoAction
                     'reason' => 'Stock Inicial',
                 ]);
             }
-            
+
             Log::info("Nuevo producto creado: ID {$product->id} - {$product->name}");
 
             return $product;

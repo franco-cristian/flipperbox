@@ -1,14 +1,16 @@
 <?php
+
 namespace FlipperBox\Inventory\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
 
 class InventoryMovement extends Model
 {
     use HasFactory;
+
     protected $fillable = ['product_id', 'user_id', 'type', 'quantity', 'reason'];
 
     public function product(): BelongsTo

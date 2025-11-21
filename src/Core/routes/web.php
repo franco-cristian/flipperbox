@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
 
 Route::post('/notifications/mark-as-read', function (Request $request) {
     $request->user()->unreadNotifications->markAsRead();
+
     return back();
 })->middleware('auth')->name('notifications.markAsRead');
 

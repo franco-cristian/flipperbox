@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\ReservationConfirmed;
 use App\Models\User;
 use App\Notifications\ReservationCreated;
+use Carbon\Carbon;
 use FlipperBox\Scheduling\Models\DailyCapacity;
 use FlipperBox\Scheduling\Models\Reservation;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +17,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
-use Carbon\Carbon;
 
 class BookingController extends Controller
 {
@@ -44,7 +44,7 @@ class BookingController extends Controller
             ->where('date', '>=', today())
             ->orderBy('date')
             ->get()
-            ->map(fn($capacity) => [
+            ->map(fn ($capacity) => [
                 'date' => $capacity->date->format('Y-m-d'),
                 'available_slots' => $capacity->total_slots - $capacity->booked_slots,
             ]);
@@ -71,8 +71,8 @@ class BookingController extends Controller
             'hasVehicles' => true,
             'vehicles' => $user->vehiculos,
             'capacities' => $capacities,
-            'currentYear' => (int)$year,
-            'currentMonth' => (int)$month,
+            'currentYear' => (int) $year,
+            'currentMonth' => (int) $month,
             'userReservations' => $userReservations,
         ]);
     }
@@ -89,7 +89,7 @@ class BookingController extends Controller
         $user = Auth::user();
 
         // Verificar que el vehículo pertenece al usuario
-        if (!$user->vehiculos()->where('id', $validated['vehicle_id'])->exists()) {
+        if (! $user->vehiculos()->where('id', $validated['vehicle_id'])->exists()) {
             return back()->with('error', 'El vehículo seleccionado no es válido.');
         }
 
@@ -101,7 +101,7 @@ class BookingController extends Controller
 
         if ($alreadyBookedOnDate) {
             throw ValidationException::withMessages([
-                'reservation_date' => 'Ya tienes una reserva confirmada para este día.'
+                'reservation_date' => 'Ya tienes una reserva confirmada para este día.',
             ]);
         }
 
@@ -113,16 +113,16 @@ class BookingController extends Controller
 
         if ($hasActiveReservationForVehicleOnThisDate) {
             throw ValidationException::withMessages([
-                'vehicle_id' => 'Este vehículo ya tiene una reserva confirmada para esta fecha específica.'
+                'vehicle_id' => 'Este vehículo ya tiene una reserva confirmada para esta fecha específica.',
             ]);
         }
 
         $reservation = DB::transaction(function () use ($validated, $user) {
             $capacity = DailyCapacity::where('date', $validated['reservation_date'])->lockForUpdate()->first();
 
-            if (!$capacity || $capacity->booked_slots >= $capacity->total_slots) {
+            if (! $capacity || $capacity->booked_slots >= $capacity->total_slots) {
                 throw ValidationException::withMessages([
-                    'reservation_date' => 'No hay cupos disponibles para la fecha seleccionada.'
+                    'reservation_date' => 'No hay cupos disponibles para la fecha seleccionada.',
                 ]);
             }
 

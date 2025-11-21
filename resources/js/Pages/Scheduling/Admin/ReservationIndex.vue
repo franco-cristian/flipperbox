@@ -1,9 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
 import ConfirmationModal from '@/Components/ConfirmationModal.vue';
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { throttle } from 'lodash';
 
 const props = defineProps({
@@ -21,12 +21,16 @@ const filters = ref({
 });
 
 // Observador que reacciona a los cambios en los filtros y recarga la página
-watch(filters, throttle(() => {
-    router.get(route('admin.scheduling.reservations.index'), filters.value, {
-        preserveState: true,
-        replace: true,
-    });
-}, 300), { deep: true });
+watch(
+    filters,
+    throttle(() => {
+        router.get(route('admin.scheduling.reservations.index'), filters.value, {
+            preserveState: true,
+            replace: true,
+        });
+    }, 300),
+    { deep: true }
+);
 
 const statusClass = (status) => ({
     'bg-green-100 text-green-800': status === 'Confirmada',
@@ -35,7 +39,8 @@ const statusClass = (status) => ({
     'bg-red-100 text-red-800': status === 'Cancelada',
 });
 
-const formatDate = (dateString) => new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
 
 // --- NUEVA FUNCIÓN HELPER ---
 // Función para verificar si una fecha de reserva es futura
@@ -75,14 +80,19 @@ const confirmStatusChange = (reservation, newStatus) => {
         message,
         confirmButtonText: buttonText,
         confirmButtonClass: buttonClass,
-        method: () => router.patch(route('admin.scheduling.reservations.update', reservation.id), { status: newStatus }, {
-            onSuccess: () => closeModal(),
-            preserveScroll: true,
-        })
+        method: () =>
+            router.patch(
+                route('admin.scheduling.reservations.update', reservation.id),
+                { status: newStatus },
+                {
+                    onSuccess: () => closeModal(),
+                    preserveScroll: true,
+                }
+            ),
     });
 };
 
-const closeModal = () => confirmingAction.value = false;
+const closeModal = () => (confirmingAction.value = false);
 </script>
 
 <template>
@@ -98,8 +108,14 @@ const closeModal = () => confirmingAction.value = false;
                     <div class="p-6 bg-gray-50 border-b">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                             <div>
-                                <label for="status" class="block font-medium text-sm text-gray-700">Filtrar por Estado</label>
-                                <select id="status" v-model="filters.status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <label for="status" class="block font-medium text-sm text-gray-700"
+                                    >Filtrar por Estado</label
+                                >
+                                <select
+                                    id="status"
+                                    v-model="filters.status"
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                >
                                     <option value="">Todos</option>
                                     <option value="Confirmada">Confirmada</option>
                                     <option value="Asistió">Asistió</option>
@@ -108,8 +124,15 @@ const closeModal = () => confirmingAction.value = false;
                                 </select>
                             </div>
                             <div>
-                                <label for="date" class="block font-medium text-sm text-gray-700">Filtrar por Fecha</label>
-                                <input id="date" type="date" v-model="filters.date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+                                <label for="date" class="block font-medium text-sm text-gray-700"
+                                    >Filtrar por Fecha</label
+                                >
+                                <input
+                                    id="date"
+                                    v-model="filters.date"
+                                    type="date"
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                />
                             </div>
                         </div>
                     </div>
@@ -126,37 +149,66 @@ const closeModal = () => confirmingAction.value = false;
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="reservation in reservations.data" :key="reservation.id" class="bg-white border-b hover:bg-gray-50">
-                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ formatDate(reservation.reservation_date) }}</th>
-                                        <td class="px-6 py-4">{{ reservation.user.name }} {{ reservation.user.apellido }}</td>
-                                        <td class="px-6 py-4">{{ reservation.vehicle.marca }} {{ reservation.vehicle.modelo }} ({{ reservation.vehicle.patente }})</td>
+                                    <tr
+                                        v-for="reservation in reservations.data"
+                                        :key="reservation.id"
+                                        class="bg-white border-b hover:bg-gray-50"
+                                    >
+                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                            {{ formatDate(reservation.reservation_date) }}
+                                        </th>
                                         <td class="px-6 py-4">
-                                            <span class="px-2 py-1 font-semibold leading-tight text-xs rounded-full" :class="statusClass(reservation.status)">
+                                            {{ reservation.user.name }} {{ reservation.user.apellido }}
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            {{ reservation.vehicle.marca }} {{ reservation.vehicle.modelo }} ({{
+                                                reservation.vehicle.patente
+                                            }})
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span
+                                                class="px-2 py-1 font-semibold leading-tight text-xs rounded-full"
+                                                :class="statusClass(reservation.status)"
+                                            >
                                                 {{ reservation.status }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <div v-if="reservation.status === 'Confirmada'">
                                                 <!-- AHORA LOS BOTONES PUEDEN ESTAR DESHABILITADOS -->
-                                                <button 
-                                                    @click="confirmStatusChange(reservation, 'Asistió')" 
+                                                <button
                                                     class="font-medium text-green-600 hover:underline mr-4"
                                                     :disabled="isFutureReservation(reservation.reservation_date)"
-                                                    :class="{ 'opacity-50 cursor-not-allowed': isFutureReservation(reservation.reservation_date) }"
+                                                    :class="{
+                                                        'opacity-50 cursor-not-allowed': isFutureReservation(
+                                                            reservation.reservation_date
+                                                        ),
+                                                    }"
                                                     title="Solo se puede marcar en o después de la fecha de la reserva"
-                                                >Asistió</button>
-                                                <button 
-                                                    @click="confirmStatusChange(reservation, 'Ausente')" 
+                                                    @click="confirmStatusChange(reservation, 'Asistió')"
+                                                >
+                                                    Asistió
+                                                </button>
+                                                <button
                                                     class="font-medium text-orange-600 hover:underline"
                                                     :disabled="isFutureReservation(reservation.reservation_date)"
-                                                    :class="{ 'opacity-50 cursor-not-allowed': isFutureReservation(reservation.reservation_date) }"
+                                                    :class="{
+                                                        'opacity-50 cursor-not-allowed': isFutureReservation(
+                                                            reservation.reservation_date
+                                                        ),
+                                                    }"
                                                     title="Solo se puede marcar en o después de la fecha de la reserva"
-                                                >Ausente</button>
+                                                    @click="confirmStatusChange(reservation, 'Ausente')"
+                                                >
+                                                    Ausente
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr v-if="reservations.data.length === 0">
-                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">No se encontraron reservas con los filtros actuales.</td>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                            No se encontraron reservas con los filtros actuales.
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -168,14 +220,14 @@ const closeModal = () => confirmingAction.value = false;
                 </div>
             </div>
         </div>
-        <ConfirmationModal 
-            :show="confirmingAction" 
-            @close="closeModal"
-            @confirm="actionToConfirm.method"
+        <ConfirmationModal
+            :show="confirmingAction"
             :title="actionToConfirm.title"
             :message="actionToConfirm.message"
             :confirm-button-text="actionToConfirm.confirmButtonText"
             :confirm-button-class="actionToConfirm.confirmButtonClass"
+            @close="closeModal"
+            @confirm="actionToConfirm.method"
         />
     </AuthenticatedLayout>
 </template>

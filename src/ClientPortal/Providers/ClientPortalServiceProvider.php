@@ -1,4 +1,5 @@
 <?php
+
 namespace FlipperBox\ClientPortal\Providers;
 
 use Illuminate\Support\Facades\Route;

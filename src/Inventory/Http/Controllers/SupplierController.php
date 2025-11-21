@@ -27,6 +27,7 @@ class SupplierController extends Controller
     public function store(StoreSupplierRequest $request): RedirectResponse
     {
         Supplier::create($request->validated());
+
         return to_route('inventario.suppliers.index')->with('success', 'Proveedor creado exitosamente.');
     }
 
@@ -40,12 +41,14 @@ class SupplierController extends Controller
     public function update(UpdateSupplierRequest $request, Supplier $supplier): RedirectResponse
     {
         $supplier->update($request->validated());
+
         return to_route('inventario.suppliers.index')->with('success', 'Proveedor actualizado exitosamente.');
     }
 
     public function destroy(Supplier $supplier): RedirectResponse
     {
         $supplier->delete(); // Usamos Soft Delete
+
         return to_route('inventario.suppliers.index')->with('success', 'Proveedor eliminado exitosamente.');
     }
 }

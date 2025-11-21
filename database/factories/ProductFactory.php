@@ -25,19 +25,19 @@ class ProductFactory extends Factory
      */
     public function definition(): array
     {
-        $productName = 'Filtro de ' . fake()->randomElement(['Aceite', 'Aire', 'Combustible']) . ' ' . fake()->word();
-        
+        $productName = 'Filtro de '.fake()->randomElement(['Aceite', 'Aire', 'Combustible']).' '.fake()->word();
+
         $cost = fake()->randomFloat(2, 5, 300);
         $ivaPercentage = 21.00;
         $profitMargin = fake()->randomElement([30, 40, 50]);
-        
+
         // Calcular el precio: (Costo + IVA) × (1 + Margen%)
         $costWithIva = $cost * (1 + ($ivaPercentage / 100));
         $price = $costWithIva * (1 + ($profitMargin / 100));
 
         return [
             'name' => $productName,
-            'sku' => 'SKU-' . strtoupper(Str::random(8)),
+            'sku' => 'SKU-'.strtoupper(Str::random(8)),
             'description' => fake()->sentence(10),
             'cost' => $cost,
             'iva_percentage' => $ivaPercentage,

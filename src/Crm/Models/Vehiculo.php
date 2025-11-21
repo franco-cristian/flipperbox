@@ -2,14 +2,14 @@
 
 namespace FlipperBox\Crm\Models;
 
-use App\Models\User; 
+use App\Models\User;
 use Database\Factories\VehiculoFactory;
+use FlipperBox\WorkManagement\Models\WorkOrder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use FlipperBox\WorkManagement\Models\WorkOrder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Vehiculo extends Model
 {
@@ -47,6 +47,6 @@ class Vehiculo extends Model
 
     public function workOrders(): HasMany
     {
-        return $this->hasMany(WorkOrder::class, 'vehicle_id'); 
+        return $this->hasMany(WorkOrder::class, 'vehicle_id');
     }
 }

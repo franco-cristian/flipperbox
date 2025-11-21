@@ -26,6 +26,6 @@ class PolicyServiceProvider extends ServiceProvider
         $this->registerPolicies();
 
         Gate::policy(Vehiculo::class, VehiculoPolicy::class);
-        
+
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace FlipperBox\Crm\Actions;
 
 use App\Models\User;

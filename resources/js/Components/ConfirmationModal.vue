@@ -7,7 +7,7 @@ defineProps({
     show: { type: Boolean, default: false },
     title: { type: String, default: 'Confirmar Acción' },
     message: { type: String, default: '¿Estás seguro de que deseas realizar esta acción?' },
-    
+
     // --- NUEVAS PROPS PARA FLEXIBILIDAD ---
     confirmButtonText: { type: String, default: 'Confirmar' },
     confirmButtonClass: { type: String, default: 'bg-red-600 hover:bg-red-700' }, // Color por defecto (peligro)
@@ -29,15 +29,18 @@ const confirmAction = () => emit('confirm');
             </p>
 
             <div class="mt-6 flex justify-end">
-                <button @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none">
+                <button
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                    @click="closeModal"
+                >
                     Cancelar
                 </button>
 
                 <!-- AHORA EL BOTÓN ES DINÁMICO -->
-                <button 
-                    @click="confirmAction" 
+                <button
                     class="ml-3 px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none"
                     :class="confirmButtonClass"
+                    @click="confirmAction"
                 >
                     {{ confirmButtonText }}
                 </button>

@@ -55,7 +55,7 @@ class ReservationController extends Controller
         if (in_array($newStatus, ['Asistió', 'Ausente']) && $reservationDate->isFuture()) {
             return back()->with('error', 'No se puede marcar como "Asistió" o "Ausente" una reserva que aún no ha ocurrido.');
         }
-        
+
         // --- REGLA DE NEGOCIO: UNA ORDEN COMPLETADA NO SE PUEDE MODIFICAR ---
         if (in_array($originalStatus, ['Asistió', 'Ausente', 'Cancelada'])) {
             return back()->with('error', 'No se puede cambiar el estado de una reserva que ya ha sido finalizada o cancelada.');
@@ -71,7 +71,7 @@ class ReservationController extends Controller
                 }
             });
         } elseif ($originalStatus === 'Confirmada' && $newStatus !== 'Confirmada') {
-             DB::transaction(function () use ($reservation) {
+            DB::transaction(function () use ($reservation) {
                 $capacity = DailyCapacity::where('date', $reservation->reservation_date)->lockForUpdate()->first();
                 if ($capacity && $capacity->booked_slots > 0) {
                     $capacity->decrement('booked_slots');

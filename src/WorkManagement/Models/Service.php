@@ -15,7 +15,7 @@ class Service extends Model
     public function workOrders(): BelongsToMany
     {
         return $this->belongsToMany(WorkOrder::class, 'work_order_service')
-                    ->withPivot('price')
-                    ->withTimestamps();
+            ->withPivot('price')
+            ->withTimestamps();
     }
 }

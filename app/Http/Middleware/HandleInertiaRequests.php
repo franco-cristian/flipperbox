@@ -49,8 +49,8 @@ class HandleInertiaRequests extends Middleware
 
             // Compartimos los mensajes flash también de forma "lazy".
             'flash' => [
-                'success' => fn() => $request->session()->get('success'),
-                'error' => fn() => $request->session()->get('error'),
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
             ],
             // Comparte las notificaciones en cada petición si el usuario está logueado.
             'notifications' => $request->user()

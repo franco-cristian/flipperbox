@@ -29,13 +29,15 @@ class CrmController extends Controller
     public function store(StoreUserAsClientRequest $request, CreateUserAsClientAction $createUserAsClient): RedirectResponse
     {
         $createUserAsClient->execute($request->validated());
+
         return to_route('clientes.index')->with('success', 'Cliente creado exitosamente.');
     }
 
     public function show(User $user): Response
     {
-        abort_if(!$user->hasRole('Cliente'), 404);
+        abort_if(! $user->hasRole('Cliente'), 404);
         $user->load('vehiculos');
+
         return Inertia::render('Crm/Clientes/Show', [
             'cliente' => $user,
         ]);
@@ -43,7 +45,8 @@ class CrmController extends Controller
 
     public function edit(User $user): Response
     {
-        abort_if(!$user->hasRole('Cliente'), 404);
+        abort_if(! $user->hasRole('Cliente'), 404);
+
         return Inertia::render('Crm/Clientes/Edit', [
             'cliente' => $user,
         ]);
@@ -52,13 +55,14 @@ class CrmController extends Controller
     public function update(UpdateUserAsClientRequest $request, User $user): RedirectResponse
     {
         $user->update($request->validated());
+
         return to_route('clientes.index')->with('success', 'Cliente actualizado exitosamente.');
     }
 
     public function destroy(User $user): RedirectResponse
     {
         // 1. Verificación de Rol explícita
-        if (!$user->hasRole('Cliente')) {
+        if (! $user->hasRole('Cliente')) {
             return back()->with('error', 'La acción de eliminación solo es aplicable a usuarios con el rol de Cliente.');
         }
 
@@ -74,7 +78,7 @@ class CrmController extends Controller
             // El catch se mantiene como una segunda capa de seguridad por si un Observer lanza una excepción
             return back()->with('error', $e->validator->errors()->first('error'));
         }
-        
+
         return to_route('clientes.index')->with('success', 'Cliente eliminado exitosamente.');
     }
 }

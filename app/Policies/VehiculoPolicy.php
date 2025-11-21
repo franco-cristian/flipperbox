@@ -11,11 +11,12 @@ class VehiculoPolicy
      * Realiza una verificación "antes" de cualquier otro método.
      * Si el usuario es un Admin, se le concede acceso total inmediatamente.
      */
-    public function before(User $user, string $ability): bool|null
+    public function before(User $user, string $ability): ?bool
     {
         if ($user->hasRole('Admin')) {
             return true;
         }
+
         return null; // Dejar que las otras reglas decidan
     }
 

@@ -35,8 +35,8 @@ class CapacityController extends Controller
 
         return Inertia::render('Scheduling/Admin/CapacityIndex', [
             'capacities' => $capacities,
-            'currentYear' => (int)$year,
-            'currentMonth' => (int)$month,
+            'currentYear' => (int) $year,
+            'currentMonth' => (int) $month,
         ]);
     }
 

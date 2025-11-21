@@ -5,7 +5,7 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 defineProps({
     chartData: { type: Object, required: true },
-    chartOptions: { type: Object, default: () => ({ responsive: true, maintainAspectRatio: false }) }
+    chartOptions: { type: Object, default: () => ({ responsive: true, maintainAspectRatio: false }) },
 });
 </script>
 <template>

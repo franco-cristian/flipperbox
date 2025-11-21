@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Observers;
+
 use FlipperBox\Crm\Models\Vehiculo;
 use Illuminate\Validation\ValidationException;
 

@@ -42,7 +42,7 @@ class VehiculoController extends Controller
             'patente' => ['required', 'string', 'max:255', 'unique:vehiculos,patente'],
             'marca' => ['required', 'string', 'max:255'],
             'modelo' => ['required', 'string', 'max:255'],
-            'anio' => ['required', 'integer', 'min:1950', 'max:' . date('Y')],
+            'anio' => ['required', 'integer', 'min:1950', 'max:'.date('Y')],
             'kilometraje' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -67,11 +67,12 @@ class VehiculoController extends Controller
             'patente' => ['required', 'string', 'max:255', Rule::unique('vehiculos', 'patente')->ignore($vehiculo->id)],
             'marca' => ['required', 'string', 'max:255'],
             'modelo' => ['required', 'string', 'max:255'],
-            'anio' => ['required', 'integer', 'min:1950', 'max:' . date('Y')],
+            'anio' => ['required', 'integer', 'min:1950', 'max:'.date('Y')],
             'kilometraje' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $vehiculo->update($validated);
+
         return to_route('cliente.vehiculos.index')->with('success', 'Vehículo actualizado exitosamente.');
     }
 

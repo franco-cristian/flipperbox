@@ -23,7 +23,9 @@ const submit = () => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">Crear Nuevo Cliente</h2>
-                <Link :href="route('clientes.index')" class="text-sm text-gray-700 underline">&larr; Volver al listado</Link>
+                <Link :href="route('clientes.index')" class="text-sm text-gray-700 underline"
+                    >&larr; Volver al listado</Link
+                >
             </div>
         </template>
 
@@ -36,35 +38,78 @@ const submit = () => {
                                 <!-- Campo Nombre -->
                                 <div>
                                     <label for="name" class="block font-medium text-sm text-gray-700">Nombre</label>
-                                    <input id="name" type="text" v-model="form.name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required autofocus />
-                                    <div v-if="form.errors.name" class="text-sm text-red-600 mt-1">{{ form.errors.name }}</div>
+                                    <input
+                                        id="name"
+                                        v-model="form.name"
+                                        type="text"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        required
+                                        autofocus
+                                    />
+                                    <div v-if="form.errors.name" class="text-sm text-red-600 mt-1">
+                                        {{ form.errors.name }}
+                                    </div>
                                 </div>
 
                                 <!-- Campo Apellido -->
                                 <div>
-                                    <label for="apellido" class="block font-medium text-sm text-gray-700">Apellido</label>
-                                    <input id="apellido" type="text" v-model="form.apellido" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
-                                    <div v-if="form.errors.apellido" class="text-sm text-red-600 mt-1">{{ form.errors.apellido }}</div>
+                                    <label for="apellido" class="block font-medium text-sm text-gray-700"
+                                        >Apellido</label
+                                    >
+                                    <input
+                                        id="apellido"
+                                        v-model="form.apellido"
+                                        type="text"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        required
+                                    />
+                                    <div v-if="form.errors.apellido" class="text-sm text-red-600 mt-1">
+                                        {{ form.errors.apellido }}
+                                    </div>
                                 </div>
 
                                 <!-- Campo Teléfono -->
                                 <div>
-                                    <label for="telefono" class="block font-medium text-sm text-gray-700">Teléfono</label>
-                                    <input id="telefono" type="text" v-model="form.telefono" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
-                                    <div v-if="form.errors.telefono" class="text-sm text-red-600 mt-1">{{ form.errors.telefono }}</div>
+                                    <label for="telefono" class="block font-medium text-sm text-gray-700"
+                                        >Teléfono</label
+                                    >
+                                    <input
+                                        id="telefono"
+                                        v-model="form.telefono"
+                                        type="text"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        required
+                                    />
+                                    <div v-if="form.errors.telefono" class="text-sm text-red-600 mt-1">
+                                        {{ form.errors.telefono }}
+                                    </div>
                                 </div>
-                                
+
                                 <!-- Campo Email -->
                                 <div>
                                     <label for="email" class="block font-medium text-sm text-gray-700">Email</label>
-                                    <input id="email" type="email" v-model="form.email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required />
-                                    <div v-if="form.errors.email" class="text-sm text-red-600 mt-1">{{ form.errors.email }}</div>
+                                    <input
+                                        id="email"
+                                        v-model="form.email"
+                                        type="email"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        required
+                                    />
+                                    <div v-if="form.errors.email" class="text-sm text-red-600 mt-1">
+                                        {{ form.errors.email }}
+                                    </div>
                                 </div>
 
                                 <!-- Campo Tipo de Documento -->
                                 <div>
-                                    <label for="documento_tipo" class="block font-medium text-sm text-gray-700">Tipo de Documento (Opcional)</label>
-                                    <select id="documento_tipo" v-model="form.documento_tipo" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                    <label for="documento_tipo" class="block font-medium text-sm text-gray-700"
+                                        >Tipo de Documento (Opcional)</label
+                                    >
+                                    <select
+                                        id="documento_tipo"
+                                        v-model="form.documento_tipo"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                    >
                                         <option>DNI</option>
                                         <option>Pasaporte</option>
                                         <option>Otro</option>
@@ -73,15 +118,28 @@ const submit = () => {
 
                                 <!-- Campo Número de Documento -->
                                 <div>
-                                    <label for="documento_valor" class="block font-medium text-sm text-gray-700">Número de Documento (Opcional)</label>
-                                    <input id="documento_valor" type="text" v-model="form.documento_valor" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
-                                    <div v-if="form.errors.documento_valor" class="text-sm text-red-600 mt-1">{{ form.errors.documento_valor }}</div>
+                                    <label for="documento_valor" class="block font-medium text-sm text-gray-700"
+                                        >Número de Documento (Opcional)</label
+                                    >
+                                    <input
+                                        id="documento_valor"
+                                        v-model="form.documento_valor"
+                                        type="text"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                    />
+                                    <div v-if="form.errors.documento_valor" class="text-sm text-red-600 mt-1">
+                                        {{ form.errors.documento_valor }}
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Botón de Envío -->
                             <div class="flex items-center justify-end mt-6">
-                                <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700" :disabled="form.processing">
+                                <button
+                                    type="submit"
+                                    class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
+                                    :disabled="form.processing"
+                                >
                                     Guardar Cliente
                                 </button>
                             </div>

@@ -3,13 +3,13 @@
 namespace FlipperBox\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use FlipperBox\Inventory\Models\Product;
 use FlipperBox\WorkManagement\Models\WorkOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -26,9 +26,9 @@ class DashboardController extends Controller
 
         // --- MÉTRICA 2: ACTIVIDAD DEL TALLER ---
         $activityData = WorkOrder::select(
-                DB::raw('DATE(completion_date) as date'),
-                DB::raw('count(*) as count')
-            )
+            DB::raw('DATE(completion_date) as date'),
+            DB::raw('count(*) as count')
+        )
             ->where('status', 'Completada')
             ->whereBetween('completion_date', [now()->subDays(29), now()])
             ->groupBy('date')
@@ -76,7 +76,7 @@ class DashboardController extends Controller
             'labels' => $workOrderStatus->keys(),
             'data' => $workOrderStatus->values(),
         ];
-        
+
         // --- DATOS PARA NOTIFICACIONES ---
         $notifications = $user->unreadNotifications()->limit(5)->get();
 
