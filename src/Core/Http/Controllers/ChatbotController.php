@@ -48,8 +48,11 @@ class ChatbotController extends Controller
         // 4. Construir el Contexto para la IA
         $context = '';
         foreach ($similarProducts as $product) {
+            // Formatear precio correctamente
+            $precioFormateado = $this->formatPriceForContext($product->price);
+
             // Formatear para que sea más legible en el contexto
-            $context .= "Producto: {$product->name}. Precio: \${$product->price}. Stock: {$product->current_stock}. Descripción: {$product->description}. ";
+            $context .= "Producto: {$product->name}. Precio: {$precioFormateado}. Stock: {$product->current_stock}. Descripción: {$product->description}. ";
         }
 
         if ($similarProducts->isEmpty()) {
@@ -64,12 +67,70 @@ class ChatbotController extends Controller
             $reservationInfo = $this->getReservationAvailability();
         }
 
-        // 6. Generar Respuesta con LLM
-        $answer = $this->chatbotService->answer($question, $context, $reservationInfo);
+        // 6. Obtener conversationId (usar la sesión o generar una)
+        $conversationId = $this->getConversationId($request);
+
+        // 7. Generar Respuesta con LLM (con historial de conversación)
+        $answer = $this->chatbotService->answer($question, $context, $reservationInfo, $conversationId);
 
         return response()->json([
             'response' => $answer,
+            'conversation_id' => $conversationId, // Opcional: para debugging
         ]);
+    }
+
+    /**
+     * Obtiene o genera un ID de conversación único
+     */
+    private function getConversationId(Request $request): string
+    {
+        // Intentar obtener de la sesión
+        if ($request->hasSession()) {
+            $conversationId = $request->session()->get('chatbot_conversation_id');
+            if (! $conversationId) {
+                $conversationId = uniqid('chat_', true);
+                $request->session()->put('chatbot_conversation_id', $conversationId);
+            }
+
+            return $conversationId;
+        }
+
+        // Si no hay sesión, usar el IP + User-Agent como fallback
+        $userIp = $request->ip() ?? 'unknown';
+        $userAgent = $request->userAgent() ?? 'unknown';
+
+        return 'chat_'.md5($userIp.$userAgent);
+    }
+
+    /**
+     * Endpoint para limpiar el historial de conversación
+     */
+    public function clearHistory(Request $request)
+    {
+        $conversationId = $this->getConversationId($request);
+        $this->chatbotService->clearConversationHistory($conversationId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Historial de conversación limpiado',
+        ]);
+    }
+
+    /**
+     * Formatea el precio para el contexto del LLM
+     */
+    private function formatPriceForContext(float $price): string
+    {
+        $parteEntera = (int) floor($price);
+        $centavos = (int) round(($price - $parteEntera) * 100);
+
+        $parteEnteraFormateada = number_format($parteEntera, 0, '', '.');
+
+        if ($centavos === 0) {
+            return $parteEnteraFormateada.' pesos';
+        }
+
+        return $parteEnteraFormateada.' pesos con '.$centavos.' centavos';
     }
 
     /**
@@ -82,6 +143,8 @@ class ChatbotController extends Controller
             'cupo', 'disponibilidad', 'fecha disponible', 'horario', 'día disponible',
             'programar', 'citación', 'booking', 'schedule', 'appointment',
             'quiero reservar', 'necesito turno', 'hay cupo', 'tienen horarios',
+            'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo',
+            'mañana', 'pasado mañana', 'esta semana', 'próxima semana',
         ];
 
         $question = mb_strtolower($question);
@@ -112,11 +175,12 @@ class ChatbotController extends Controller
             foreach ($availabilities as $availability) {
                 $availableSlots = $availability->total_slots - $availability->booked_slots;
                 $dateFormatted = $availability->date->format('d/m/Y');
+                $dayName = $availability->date->dayName;
 
                 if ($availableSlots > 0) {
-                    $info[] = "Fecha {$dateFormatted}: {$availableSlots} cupos disponibles";
+                    $info[] = "{$dayName} {$dateFormatted}: {$availableSlots} cupos disponibles";
                 } else {
-                    $info[] = "Fecha {$dateFormatted}: Sin cupos disponibles";
+                    $info[] = "{$dayName} {$dateFormatted}: Sin cupos disponibles";
                 }
             }
 

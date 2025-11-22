@@ -6,7 +6,6 @@ export function useAudioSynthesis() {
 
     // Estado reactivo
     const isSpeaking = ref(false);
-    const isPaused = ref(false);
     const isMuted = ref(false);
     const volume = ref(1.0);
 
@@ -46,62 +45,28 @@ export function useAudioSynthesis() {
             newUtterance.voice = voice;
         }
 
+        // Eventos
         newUtterance.onstart = () => {
             isSpeaking.value = true;
-            isPaused.value = false;
         };
 
         newUtterance.onend = () => {
             isSpeaking.value = false;
-            isPaused.value = false;
             utterance.value = null;
         };
 
         newUtterance.onerror = (e) => {
             console.error('TTS Error:', e);
             isSpeaking.value = false;
-            isPaused.value = false;
-        };
-
-        newUtterance.onpause = () => {
-            isPaused.value = true;
-            isSpeaking.value = false;
-        };
-
-        newUtterance.onresume = () => {
-            isPaused.value = false;
-            isSpeaking.value = true;
         };
 
         utterance.value = newUtterance;
-
-        try {
-            synth.speak(newUtterance);
-        } catch (error) {
-            console.error('Error al reproducir audio:', error);
-        }
-    };
-
-    const pause = () => {
-        if (synth.speaking && !synth.paused) {
-            synth.pause();
-            // Los eventos onpause actualizarán el estado automáticamente
-        }
-    };
-
-    const resume = () => {
-        if (synth.paused) {
-            synth.resume();
-            // Los eventos onresume actualizarán el estado automáticamente
-        }
+        synth.speak(newUtterance);
     };
 
     const cancel = () => {
-        if (synth.speaking || synth.paused) {
-            synth.cancel();
-        }
+        synth.cancel();
         isSpeaking.value = false;
-        isPaused.value = false;
         utterance.value = null;
     };
 
@@ -113,7 +78,9 @@ export function useAudioSynthesis() {
     };
 
     const setVolume = (val) => {
-        volume.value = Math.max(0, Math.min(1, parseFloat(val)));
+        volume.value = parseFloat(val);
+        // El volumen se aplicará al próximo utterance
+        // No interrumpimos el audio actual
     };
 
     // Cargar voces cuando estén disponibles
@@ -134,12 +101,9 @@ export function useAudioSynthesis() {
 
     return {
         isSpeaking,
-        isPaused,
         isMuted,
         volume,
         speak,
-        pause,
-        resume,
         cancel,
         toggleMute,
         setVolume,

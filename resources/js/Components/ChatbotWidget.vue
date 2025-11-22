@@ -21,10 +21,9 @@ const isLoading = ref(false);
 const messagesContainer = ref(null);
 
 // --- COMPOSABLE DE AUDIO ---
-const { isSpeaking, isPaused, isMuted, volume, speak, pause, resume, cancel, toggleMute, setVolume } =
-    useAudioSynthesis();
+const { isSpeaking, isMuted, volume, speak, cancel, toggleMute, setVolume } = useAudioSynthesis();
 
-// --- RECONOCIMIENTO DE VOZ (STT) COMPLETO ---
+// --- RECONOCIMIENTO DE VOZ (STT) ---
 const isListening = ref(false);
 const speechRecognitionSupported = ref(false);
 let recognition = null;
@@ -80,8 +79,8 @@ const initializeSpeechRecognition = () => {
     };
 };
 
-// --- EFECTO TYPEWRITER COMPLETO ---
-const typewriterSpeed = 20; // ms por carácter
+// --- EFECTO TYPEWRITER ---
+const typewriterSpeed = 15;
 
 const startTypewriterEffect = (messageId, fullContent) => {
     const messageIndex = messages.value.findIndex((msg) => msg.id === messageId);
@@ -105,7 +104,7 @@ const startTypewriterEffect = (messageId, fullContent) => {
     }, typewriterSpeed);
 };
 
-// --- FUNCIONES AUXILIARES COMPLETAS ---
+// --- FUNCIONES AUXILIARES ---
 const addAssistantMessage = (content) => {
     const messageId = Date.now() + 1;
     const newMessage = {
@@ -157,9 +156,7 @@ const toggleMicrophone = () => {
         recognition.stop();
     } else {
         // Detener cualquier audio actual antes de escuchar
-        if (isSpeaking.value || isPaused.value) {
-            cancel();
-        }
+        cancel();
 
         try {
             recognition.start();
@@ -171,7 +168,55 @@ const toggleMicrophone = () => {
     }
 };
 
-// --- LÓGICA DEL CHAT COMPLETA ---
+// --- FUNCIÓN LIMPIAR CHAT ---
+const clearChat = async () => {
+    try {
+        // Llamar al backend para limpiar el historial de la conversación
+        await axios.post(
+            route('chatbot.clear-history'),
+            {},
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            }
+        );
+
+        // Limpiar el frontend: mantener solo el mensaje inicial
+        const initialMessage = messages.value[0];
+        messages.value = [
+            {
+                ...initialMessage,
+                displayedContent: initialMessage.content,
+                isTyping: false,
+                fullyDisplayed: true,
+            },
+        ];
+
+        // Cancelar cualquier audio en reproducción
+        cancel();
+
+        scrollToBottom();
+    } catch (error) {
+        console.error('Error al limpiar el historial:', error);
+
+        // Mostrar un mensaje de error al usuario
+        let errorMessage = 'No pude limpiar el historial de la conversación. ';
+
+        if (error.response?.status === 419) {
+            errorMessage += 'Error de sesión. Por favor, recarga la página.';
+        } else if (error.response?.status >= 500) {
+            errorMessage += 'Error del servidor. Intenta más tarde.';
+        } else {
+            errorMessage += 'Intenta de nuevo.';
+        }
+
+        console.error(errorMessage);
+    }
+};
+
+// --- LÓGICA DEL CHAT ---
 const toggleChat = () => {
     isOpen.value = !isOpen.value;
     if (isOpen.value) {
@@ -250,6 +295,11 @@ const displayMessages = computed(() => {
     }));
 });
 
+// Computed para mostrar el puntito rojo solo cuando hay mensajes nuevos
+const hasNewMessages = computed(() => {
+    return messages.value.length > 1;
+});
+
 // Manejar la tecla Enter para enviar mensaje
 const handleKeyPress = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -283,73 +333,61 @@ onMounted(() => {
         >
             <div
                 v-show="isOpen"
-                class="w-80 md:w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden h-[500px]"
+                class="w-[450px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden h-[650px]"
             >
                 <!-- CABECERA Y CONTROLES DE AUDIO -->
                 <div class="bg-gradient-to-r from-cyan-600 to-blue-600 p-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-white font-bold flex items-center">
-                            <span class="text-xl mr-2">🤖</span> FlipperBot
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-white font-bold flex items-center text-lg">
+                            <span class="text-2xl mr-3">🤖</span>
+                            <div>
+                                <div>FlipperBot</div>
+                                <div class="text-xs font-normal opacity-90">Asistente Virtual</div>
+                            </div>
                         </h3>
-                        <button
-                            class="text-white/80 hover:text-white transition-colors duration-200 p-1 rounded-full hover:bg-white/10"
-                            aria-label="Cerrar chat"
-                            @click="toggleChat"
-                        >
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                ></path>
-                            </svg>
-                        </button>
+                        <div class="flex items-center space-x-3">
+                            <!-- BOTÓN LIMPIAR CHAT -->
+                            <button
+                                v-if="hasNewMessages"
+                                class="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+                                title="Limpiar conversación"
+                                aria-label="Limpiar conversación"
+                                @click="clearChat"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    ></path>
+                                </svg>
+                            </button>
+                            <button
+                                class="text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+                                aria-label="Cerrar chat"
+                                @click="toggleChat"
+                            >
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    ></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- PANEL DE CONTROL -->
-                    <div class="bg-black/20 rounded-lg p-2 flex items-center justify-between text-white">
-                        <div class="flex space-x-2">
-                            <!-- Play/Resume -->
-                            <button
-                                v-if="isPaused"
-                                class="hover:text-cyan-200 transition-colors duration-200 p-1 rounded hover:bg-white/10"
-                                title="Reanudar audio"
-                                :disabled="!isPaused"
-                                aria-label="Reanudar audio"
-                                @click="resume"
-                            >
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                                        clip-rule="evenodd"
-                                    ></path>
-                                </svg>
-                            </button>
-                            <!-- Pause -->
-                            <button
-                                v-else
-                                class="hover:text-cyan-200 transition-colors duration-200 p-1 rounded hover:bg-white/10"
-                                :class="{ 'opacity-50 cursor-not-allowed': !isSpeaking }"
-                                :disabled="!isSpeaking"
-                                title="Pausar audio"
-                                aria-label="Pausar audio"
-                                @click="pause"
-                            >
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                        clip-rule="evenodd"
-                                    ></path>
-                                </svg>
-                            </button>
+                    <!-- PANEL DE CONTROL DE AUDIO SIMPLIFICADO -->
+                    <div class="bg-black/20 rounded-lg p-3 flex items-center justify-between text-white">
+                        <div class="flex space-x-3">
                             <!-- Stop -->
                             <button
-                                class="hover:text-red-300 transition-colors duration-200 p-1 rounded hover:bg-white/10"
-                                :class="{ 'opacity-50 cursor-not-allowed': !isSpeaking && !isPaused }"
-                                :disabled="!isSpeaking && !isPaused"
+                                class="hover:text-red-300 transition-colors duration-200 p-2 rounded-full hover:bg-white/10"
+                                :class="{ 'opacity-50 cursor-not-allowed': !isSpeaking }"
+                                :disabled="!isSpeaking"
                                 title="Detener audio"
                                 aria-label="Detener audio"
                                 @click="cancel"
@@ -362,9 +400,10 @@ onMounted(() => {
                                     ></path>
                                 </svg>
                             </button>
+
                             <!-- Mute -->
                             <button
-                                class="hover:text-cyan-200 transition-colors duration-200 p-1 rounded hover:bg-white/10"
+                                class="hover:text-cyan-200 transition-colors duration-200 p-2 rounded-full hover:bg-white/10"
                                 :class="{ 'text-red-400': isMuted }"
                                 title="Silenciar audio"
                                 aria-label="Silenciar audio"
@@ -401,15 +440,15 @@ onMounted(() => {
                             </button>
                         </div>
                         <!-- Slider Volumen -->
-                        <div class="flex items-center space-x-2">
-                            <span class="text-xs text-white/80">Vol</span>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-sm text-white/80">Volumen</span>
                             <input
                                 v-model="volume"
                                 type="range"
                                 min="0"
                                 max="1"
                                 step="0.1"
-                                class="w-16 accent-cyan-300 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                class="w-24 accent-cyan-300 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                                 aria-label="Volumen"
                                 @input="setVolume($event.target.value)"
                             />
@@ -417,10 +456,10 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- AREA DE MENSAJES COMPLETA -->
+                <!-- AREA DE MENSAJES -->
                 <div
                     ref="messagesContainer"
-                    class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900 scroll-smooth custom-scrollbar"
+                    class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900 scroll-smooth custom-scrollbar"
                 >
                     <div
                         v-for="msg in displayMessages"
@@ -437,10 +476,10 @@ onMounted(() => {
                                 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600':
                                     msg.role === 'assistant',
                             }"
-                            class="max-w-[85%] rounded-2xl px-4 py-2 shadow-sm text-sm transition-all duration-200"
+                            class="max-w-[85%] rounded-2xl px-5 py-3 shadow-sm text-sm transition-all duration-200"
                         >
                             <!-- Contenido del mensaje con efecto typewriter -->
-                            <div class="whitespace-pre-wrap break-words">
+                            <div class="whitespace-pre-wrap break-words leading-relaxed">
                                 {{ msg.displayContent }}
                                 <!-- Cursor parpadeante para mensajes que se están escribiendo -->
                                 <span
@@ -451,88 +490,102 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <!-- Loading Indicator Mejorado -->
+                    <!-- Loading Indicator -->
                     <div v-if="isLoading" class="flex justify-start">
                         <div
-                            class="bg-white dark:bg-gray-700 rounded-2xl px-4 py-2 border border-gray-200 dark:border-gray-600 shadow-sm"
+                            class="bg-white dark:bg-gray-700 rounded-2xl px-5 py-3 border border-gray-200 dark:border-gray-600 shadow-sm"
                         >
-                            <div class="flex space-x-1 h-4 items-center">
-                                <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                                <div
-                                    class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
-                                    style="animation-delay: 0.1s"
-                                ></div>
-                                <div
-                                    class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
-                                    style="animation-delay: 0.2s"
-                                ></div>
+                            <div class="flex space-x-2 items-center">
+                                <div class="text-sm text-gray-600 dark:text-gray-300 mr-3">
+                                    FlipperBot está pensando...
+                                </div>
+                                <div class="flex space-x-1">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                                    <div
+                                        class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                                        style="animation-delay: 0.1s"
+                                    ></div>
+                                    <div
+                                        class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                                        style="animation-delay: 0.2s"
+                                    ></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- INPUT AREA COMPLETA -->
-                <div
-                    class="p-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2"
-                >
-                    <!-- BOTÓN DE MICRÓFONO MEJORADO -->
-                    <button
-                        class="p-2 rounded-full transition-all duration-300 relative group"
-                        :class="{
-                            'text-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse': isListening,
-                            'text-gray-500 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700': !isListening,
-                        }"
-                        :title="isListening ? 'Detener grabación' : 'Hablar con voz'"
-                        :disabled="isLoading || !speechRecognitionSupported"
-                        aria-label="Activar micrófono"
-                        @click="toggleMicrophone"
-                    >
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                fill-rule="evenodd"
-                                d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"
-                                clip-rule="evenodd"
-                            ></path>
-                        </svg>
-                        <!-- Indicador de grabación -->
-                        <div
-                            v-if="isListening"
-                            class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"
-                        ></div>
-                        <div v-if="isListening" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-                    </button>
+                <!-- INPUT AREA MÁS GRANDE -->
+                <div class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="text-xs text-gray-500 dark:text-gray-400 flex-1">
+                            Escribe tu pregunta o usa el micrófono
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ userInput.length }}/500</div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button
+                            class="p-3 rounded-full transition-all duration-300 relative group flex-shrink-0"
+                            :class="{
+                                'text-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse': isListening,
+                                'text-gray-500 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700':
+                                    !isListening,
+                            }"
+                            :title="isListening ? 'Detener grabación' : 'Hablar con voz'"
+                            :disabled="isLoading || !speechRecognitionSupported"
+                            aria-label="Activar micrófono"
+                            @click="toggleMicrophone"
+                        >
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"
+                                    clip-rule="evenodd"
+                                ></path>
+                            </svg>
+                            <!-- Indicador de grabación -->
+                            <div
+                                v-if="isListening"
+                                class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"
+                            ></div>
+                            <div
+                                v-if="isListening"
+                                class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
+                            ></div>
+                        </button>
 
-                    <input
-                        v-model="userInput"
-                        type="text"
-                        placeholder="Escribe tu consulta sobre productos, precios o reservaciones..."
-                        class="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-2 px-4 transition-all duration-200 placeholder-gray-500 dark:placeholder-gray-400"
-                        :disabled="isLoading"
-                        maxlength="500"
-                        aria-label="Escribir mensaje"
-                        @keyup="handleKeyPress"
-                    />
+                        <input
+                            v-model="userInput"
+                            type="text"
+                            placeholder="Escribe tu consulta sobre productos, precios, stock o reservaciones..."
+                            class="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-3 px-4 transition-all duration-200 placeholder-gray-500 dark:placeholder-gray-400"
+                            :disabled="isLoading"
+                            maxlength="500"
+                            aria-label="Escribir mensaje"
+                            @keyup="handleKeyPress"
+                        />
 
-                    <button
-                        class="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 active:scale-95"
-                        :disabled="!userInput.trim() || isLoading"
-                        title="Enviar mensaje"
-                        aria-label="Enviar mensaje"
-                        @click="sendMessage"
-                    >
-                        <svg class="w-5 h-5 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"
-                            ></path>
-                        </svg>
-                    </button>
+                        <button
+                            class="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 active:scale-95 flex-shrink-0"
+                            :disabled="!userInput.trim() || isLoading"
+                            title="Enviar mensaje"
+                            aria-label="Enviar mensaje"
+                            @click="sendMessage"
+                        >
+                            <svg class="w-6 h-6 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"
+                                ></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </transition>
 
-        <!-- BOTÓN FLOTANTE (TRIGGER) -->
+        <!-- BOTÓN FLOTANTE -->
         <button
-            class="w-14 h-14 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full shadow-lg hover:shadow-cyan-500/50 hover:scale-110 transition-all duration-300 transform flex items-center justify-center text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 group"
+            class="w-16 h-16 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-full shadow-2xl hover:shadow-cyan-500/50 hover:scale-110 transition-all duration-300 transform flex items-center justify-center text-white focus:outline-none focus:ring-4 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 group"
             :aria-expanded="isOpen"
             aria-label="Abrir chat de FlipperBot"
             @click="toggleChat"
@@ -548,10 +601,10 @@ onMounted(() => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
             </svg>
 
-            <!-- Notificación de nuevos mensajes -->
+            <!-- PUNTITO ROJO SOLO CUANDO HAY MENSAJES NUEVOS -->
             <div
-                v-if="!isOpen && messages.length > 1"
-                class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse"
+                v-if="!isOpen && hasNewMessages"
+                class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse border-2 border-white dark:border-gray-800"
             ></div>
         </button>
     </div>
@@ -560,16 +613,17 @@ onMounted(() => {
 <style scoped>
 /* Scrollbar personalizado para navegadores WebKit */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
+    border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background-color: rgba(156, 163, 175, 0.5);
-    border-radius: 3px;
+    border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -600,5 +654,10 @@ onMounted(() => {
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background-color: rgba(75, 85, 99, 0.7);
     }
+}
+
+/* Mejoras de estilo para mensajes */
+.message-item:last-child {
+    margin-bottom: 0;
 }
 </style>

@@ -1,142 +1,138 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { useDarkMode } from '@/Composables/useDarkMode';
-import ChatbotWidget from '@/Components/ChatbotWidget.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 defineProps({
     canLogin: Boolean,
     canRegister: Boolean,
 });
-
-const { isDark, toggleDarkMode } = useDarkMode();
 </script>
 
 <template>
-    <Head title="Bienvenido a FlipperBox" />
+    <Head title="Bienvenido" />
 
-    <div
-        class="relative min-h-screen flex flex-col justify-center items-center selection:bg-cyan-500 selection:text-white overflow-hidden"
-    >
-        <!-- 1. VIDEO DE FONDO -->
-        <div class="absolute inset-0 z-0">
-            <video autoplay loop muted playsinline class="w-full h-full object-cover">
-                <source src="/videos/mechanic-bg.mp4" type="video/mp4" />
-            </video>
-            <!-- Overlay Gradiente: Oscuro para legibilidad -->
-            <div
-                class="absolute inset-0 bg-gradient-to-b from-black/70 via-gray-900/60 to-black/80 dark:from-black/80 dark:via-gray-900/70 dark:to-black/90"
-            ></div>
-        </div>
+    <PublicLayout :can-login="canLogin" :can-register="canRegister">
+        <!-- 1. HERO SECTION -->
+        <div
+            class="relative min-h-[calc(100vh-74px)] flex flex-col justify-center items-center text-center px-4 overflow-hidden pb-20"
+        >
+            <!-- Video de Fondo -->
+            <div class="absolute inset-0 z-0">
+                <video autoplay loop muted playsinline class="w-full h-full object-cover">
+                    <source src="/videos/mechanic-bg.mp4" type="video/mp4" />
+                </video>
+                <!-- Overlay oscuro -->
+                <div class="absolute inset-0 bg-black/60"></div>
+            </div>
 
-        <!-- 2. BARRA DE NAVEGACIÓN (FLOTANTE) -->
-        <nav class="absolute top-0 w-full z-20 p-6 flex justify-between items-center">
-            <!-- Switch Dark Mode -->
-            <button
-                class="p-2 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition text-white"
-                @click="toggleDarkMode"
-            >
-                <span v-if="isDark">☀️</span>
-                <span v-else>🌙</span>
-            </button>
+            <!-- Contenido del Hero -->
+            <div class="relative z-10 max-w-4xl mx-auto mt-10">
+                <!-- Logo del Taller -->
+                <div class="mb-10 transform hover:scale-105 transition duration-700 ease-out inline-block">
+                    <img
+                        src="/images/logo-full.jpg"
+                        alt="Flipper Servicios"
+                        class="h-32 md:h-52 mx-auto rounded-3xl shadow-2xl border-4 border-white/10"
+                    />
+                </div>
 
-            <div v-if="canLogin" class="space-x-4">
-                <Link
-                    v-if="$page.props.auth.user"
-                    :href="route('dashboard')"
-                    class="text-white font-semibold hover:text-cyan-400 transition"
-                >
-                    Ir al Dashboard
-                </Link>
-                <template v-else>
-                    <Link :href="route('login')" class="text-white font-semibold hover:text-cyan-400 transition">
-                        Iniciar Sesión
-                    </Link>
-                    <Link
-                        v-if="canRegister"
-                        :href="route('register')"
-                        class="px-5 py-2 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg shadow-cyan-500/30 transition transform hover:scale-105"
+                <h1 class="text-5xl md:text-7xl font-black text-white tracking-tight mb-6 drop-shadow-2xl">
+                    Tu Taller,
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500"
+                        >Evolucionado.</span
                     >
-                        Registrarse
+                </h1>
+
+                <p class="text-xl text-gray-200 mb-12 max-w-2xl mx-auto leading-relaxed font-light drop-shadow-md">
+                    Gestión inteligente de turnos, historial clínico de tu vehículo y alertas en tiempo real.
+                    <span class="text-white font-medium">La confianza de siempre, ahora digital.</span>
+                </p>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-5">
+                    <Link
+                        :href="route('register')"
+                        class="px-8 py-4 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-xl hover:bg-blue-500 transition transform hover:-translate-y-1 w-full sm:w-auto"
+                    >
+                        Solicitar Turno Ahora
                     </Link>
-                </template>
-            </div>
-        </nav>
-
-        <!-- 3. CONTENIDO PRINCIPAL (HERO SECTION) -->
-        <div class="relative z-10 text-center px-4 max-w-4xl mx-auto">
-            <!-- Logo Central con Efecto de Elevación -->
-            <div class="mb-10 transform hover:scale-105 transition duration-700 ease-out">
-                <img
-                    src="/images/logo-full.jpg"
-                    alt="Flipper Servicios"
-                    class="h-32 md:h-48 mx-auto rounded-2xl shadow-2xl shadow-cyan-500/20 border border-white/10"
-                />
+                    <a
+                        href="#servicios"
+                        class="px-8 py-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/30 text-white font-semibold text-lg hover:bg-white/20 transition w-full sm:w-auto"
+                    >
+                        Ver Servicios
+                    </a>
+                </div>
             </div>
 
-            <!-- Títulos y Subtítulos -->
-            <h1 class="text-5xl md:text-7xl font-black text-white tracking-tight mb-6 drop-shadow-lg">
-                Tu Taller,
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600"
-                    >Evolucionado.</span
-                >
-            </h1>
-            <p class="text-lg md:text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-                Gestión inteligente de turnos, historial clínico de tu vehículo y notificaciones en tiempo real. La
-                confianza de siempre, ahora digital.
-            </p>
-
-            <!-- Botones de Acción Principal -->
-            <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <Link
-                    :href="route('register')"
-                    class="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-lg shadow-xl hover:shadow-cyan-500/40 transition transform hover:-translate-y-1"
-                >
-                    Solicitar Turno Ahora
-                </Link>
-                <a
-                    href="#servicios"
-                    class="px-8 py-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold text-lg hover:bg-white/20 transition"
-                >
-                    Nuestros Servicios
-                </a>
+            <!-- Indicador de Scroll (Flecha) -->
+            <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce text-white/50">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7-7-7"></path>
+                </svg>
             </div>
         </div>
 
-        <!-- 4. CARACTERÍSTICAS (GLASSMORPHISM CARDS) -->
-        <div class="relative z-10 w-full max-w-7xl mx-auto px-6 mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div
-                class="p-8 rounded-2xl bg-white/5 backdrop-blur-lg border border-white/10 hover:border-cyan-500/50 transition group"
-            >
-                <div class="text-4xl mb-4 group-hover:scale-110 transition">📅</div>
-                <h3 class="text-xl font-bold text-white mb-2">Turnos Online</h3>
-                <p class="text-gray-400 text-sm">
-                    Olvídate de llamar. Reserva tu lugar desde tu celular en segundos, las 24hs.
-                </p>
-            </div>
-            <div
-                class="p-8 rounded-2xl bg-white/5 backdrop-blur-lg border border-white/10 hover:border-cyan-500/50 transition group"
-            >
-                <div class="text-4xl mb-4 group-hover:scale-110 transition">🔧</div>
-                <h3 class="text-xl font-bold text-white mb-2">Historial Digital</h3>
-                <p class="text-gray-400 text-sm">
-                    Accede al historial completo de reparaciones y servicios de tu vehículo.
-                </p>
-            </div>
-            <div
-                class="p-8 rounded-2xl bg-white/5 backdrop-blur-lg border border-white/10 hover:border-cyan-500/50 transition group"
-            >
-                <div class="text-4xl mb-4 group-hover:scale-110 transition">🔔</div>
-                <h3 class="text-xl font-bold text-white mb-2">Alertas en Vivo</h3>
-                <p class="text-gray-400 text-sm">
-                    Recibe notificaciones cuando tu auto esté listo o necesite un servicio.
-                </p>
-            </div>
-        </div>
+        <!-- 2. SERVICIOS -->
+        <section id="servicios" class="relative z-10 py-24 px-6 transition-colors duration-500">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <span class="text-cyan-600 dark:text-cyan-400 font-bold uppercase tracking-wider text-sm"
+                        >¿Por qué elegirnos?</span
+                    >
+                    <h2 class="text-3xl md:text-4xl font-black mt-3 text-gray-900 dark:text-white">
+                        Innovación al Servicio de tu Vehículo
+                    </h2>
+                </div>
 
-        <!-- Footer Simple -->
-        <footer class="relative z-10 mt-20 py-6 text-center text-gray-500 text-sm">
-            &copy; {{ new Date().getFullYear() }} Flipper Servicios. Av. Gendarmería Nacional 2758, Formosa.
-        </footer>
-        <ChatbotWidget />
-    </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <!-- Card 1 -->
+                    <div
+                        class="p-8 rounded-[2rem] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-cyan-500 dark:hover:border-cyan-500 transition-all duration-300 hover:-translate-y-2 group shadow-lg hover:shadow-2xl dark:shadow-none"
+                    >
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-4xl mb-8 group-hover:rotate-6 transition duration-300"
+                        >
+                            📅
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Turnos Online 24/7</h3>
+                        <p class="text-gray-600 dark:text-gray-400 leading-relaxed text-lg">
+                            Reserva tu lugar desde tu celular en segundos, las 24hs. Sin llamadas, sin esperas.
+                        </p>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div
+                        class="p-8 rounded-[2rem] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-300 hover:-translate-y-2 group shadow-lg hover:shadow-2xl dark:shadow-none"
+                    >
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-4xl mb-8 group-hover:rotate-6 transition duration-300"
+                        >
+                            🔧
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Historial Digital</h3>
+                        <p class="text-gray-600 dark:text-gray-400 leading-relaxed text-lg">
+                            Accede al historial completo de reparaciones y servicios de tu vehículo. Transparencia total
+                            en cada servicio.
+                        </p>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div
+                        class="p-8 rounded-[2rem] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-500 transition-all duration-300 hover:-translate-y-2 group shadow-lg hover:shadow-2xl dark:shadow-none"
+                    >
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-4xl mb-8 group-hover:rotate-6 transition duration-300"
+                        >
+                            🔔
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Alertas en Vivo</h3>
+                        <p class="text-gray-600 dark:text-gray-400 leading-relaxed text-lg">
+                            Recibe notificaciones instantáneas cuando tu vehículo esté listo para retirar o necesite un
+                            servicio.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </PublicLayout>
 </template>

@@ -9,21 +9,39 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement('CREATE EXTENSION IF NOT EXISTS vector;');
+        // Verificar si la conexión es PostgreSQL
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            // 1. Habilitar la extensión pgvector
+            DB::statement('CREATE EXTENSION IF NOT EXISTS vector;');
 
-        Schema::table('products', function (Blueprint $table) {
-            // El modelo BAAI/bge-base-en-v1.5 genera vectores de 768 dimensiones
-            $table->vector('embedding', 768)->nullable();
-        });
+            // 2. Añadir la columna de embedding
+            Schema::table('products', function (Blueprint $table) {
+                $table->vector('embedding', 768)->nullable();
+            });
 
-        // índice HNSW para búsquedas rápidas
-        DB::statement('CREATE INDEX products_embedding_index ON products USING hnsw (embedding vector_cosine_ops);');
+            // 3. Crear índice HNSW para búsquedas rápidas (solo en PostgreSQL)
+            DB::statement('CREATE INDEX products_embedding_index ON products USING hnsw (embedding vector_cosine_ops);');
+        } else {
+            // Para otras bases de datos (MySQL, SQLite), agregar una columna normal
+            Schema::table('products', function (Blueprint $table) {
+                $table->text('embedding')->nullable();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropColumn('embedding');
-        });
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            // Para PostgreSQL: eliminar índice y columna
+            DB::statement('DROP INDEX IF EXISTS products_embedding_index;');
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropColumn('embedding');
+            });
+        } else {
+            // Para otras bases de datos: solo eliminar la columna
+            Schema::table('products', function (Blueprint $table) {
+                $table->dropColumn('embedding');
+            });
+        }
     }
 };

@@ -35,30 +35,32 @@ const submit = () => {
             {{ status }}
         </div>
 
-        <form class="space-y-4" @submit.prevent="submit">
+        <form class="space-y-5" @submit.prevent="submit">
             <div>
-                <InputLabel for="email" value="Correo Electrónico" class="text-gray-300" />
+                <InputLabel for="email" value="Correo Electrónico" class="text-white" />
                 <TextInput
                     id="email"
                     v-model="form.email"
                     type="email"
-                    class="mt-1 block w-full bg-white/5 border-gray-600 text-white focus:border-cyan-500 focus:ring-cyan-500"
+                    class="mt-1 block w-full bg-white/10 border-gray-500 text-white placeholder-gray-400 focus:border-cyan-500 focus:ring-cyan-500"
                     required
                     autofocus
                     autocomplete="username"
+                    placeholder="ejemplo@correo.com"
                 />
                 <InputError class="mt-2" :message="form.errors.email" />
             </div>
 
             <div>
-                <InputLabel for="password" value="Contraseña" class="text-gray-300" />
+                <InputLabel for="password" value="Contraseña" class="text-white" />
                 <TextInput
                     id="password"
                     v-model="form.password"
                     type="password"
-                    class="mt-1 block w-full bg-white/5 border-gray-600 text-white focus:border-cyan-500 focus:ring-cyan-500"
+                    class="mt-1 block w-full bg-white/10 border-gray-500 text-white placeholder-gray-400 focus:border-cyan-500 focus:ring-cyan-500"
                     required
                     autocomplete="current-password"
+                    placeholder="••••••••"
                 />
                 <InputError class="mt-2" :message="form.errors.password" />
             </div>
@@ -68,23 +70,23 @@ const submit = () => {
                     <Checkbox
                         v-model:checked="form.remember"
                         name="remember"
-                        class="bg-white/10 border-gray-600 text-cyan-500 focus:ring-cyan-500"
+                        class="bg-white/10 border-gray-500 text-cyan-500 focus:ring-cyan-500"
                     />
-                    <span class="ms-2 text-sm text-gray-400">Recordarme</span>
+                    <span class="ms-2 text-sm text-gray-300">Recordarme</span>
                 </label>
             </div>
 
-            <div class="flex items-center justify-between mt-6">
+            <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 mt-6">
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"
-                    class="underline text-sm text-gray-400 hover:text-white transition"
+                    class="text-sm text-gray-300 hover:text-white underline decoration-1 underline-offset-2 transition"
                 >
                     ¿Olvidaste tu contraseña?
                 </Link>
 
                 <PrimaryButton
-                    class="ml-4 bg-gradient-to-r from-cyan-600 to-blue-600 border-0 hover:from-cyan-500 hover:to-blue-500"
+                    class="w-full sm:w-auto justify-center bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border-0 font-bold py-3"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
@@ -92,12 +94,12 @@ const submit = () => {
                 </PrimaryButton>
             </div>
 
-            <div class="mt-6 text-center border-t border-white/10 pt-4">
+            <div class="mt-6 text-center border-t border-white/20 pt-4">
                 <Link
                     :href="route('register')"
-                    class="text-sm text-cyan-400 hover:text-cyan-300 transition font-medium"
+                    class="text-sm text-cyan-400 hover:text-cyan-300 font-medium transition"
                 >
-                    ¿No tienes cuenta? Regístrate aquí
+                    ¿No tienes cuenta? <span class="underline">Regístrate aquí</span>
                 </Link>
             </div>
         </form>

@@ -47,8 +47,9 @@ Route::post('/notifications/mark-as-read', function (Request $request) {
     return back();
 })->middleware('auth')->name('notifications.markAsRead');
 
-// Ruta del Chatbot (Pública)
+// Rutas del Chatbot (Públicas)
 Route::post('/chatbot/ask', [ChatbotController::class, 'handle'])->name('chatbot.ask');
+Route::post('/chatbot/clear-history', [ChatbotController::class, 'clearHistory'])->name('chatbot.clear-history');
 
 // --- Inclusión de las Rutas de Autenticación (Login, Registro, etc.) ---
 require __DIR__.'/../../../routes/auth.php';
