@@ -3,9 +3,8 @@ import { Link, usePage } from '@inertiajs/vue3';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import { ref } from 'vue';
 
-// Definimos la estructura de nuestra navegación en un solo lugar
 const navigationLinks = ref([
-    { name: 'Dashboard', href: route('dashboard'), permission: null }, // Sin permiso, visible para todos
+    { name: 'Dashboard', href: route('dashboard'), permission: null },
     { name: 'Clientes', href: route('clientes.index'), permission: 'ver clientes' },
     { name: 'Productos', href: route('inventario.products.index'), permission: 'ver inventario' },
     { name: 'Proveedores', href: route('inventario.suppliers.index'), permission: 'ver proveedores' },
@@ -20,40 +19,38 @@ const navigationLinks = ref([
     },
 ]);
 
-// Creamos una función helper para verificar permisos
 const can = (permission) => {
-    if (!permission) return true; // Si el enlace no requiere permiso, siempre se muestra
+    if (!permission) return true;
     return usePage().props.auth.user.permissions.includes(permission);
 };
 </script>
 
 <template>
-    <div class="flex flex-col w-64 py-4 px-4 bg-white border-r">
+    <div
+        class="flex flex-col h-full py-6 px-4 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-colors duration-300"
+    >
         <!-- Logo -->
-        <div class="flex items-center justify-center mb-6">
+        <div class="flex items-center justify-center mb-8">
             <Link :href="route('dashboard')">
                 <ApplicationLogo class="block h-12 w-auto" />
             </Link>
         </div>
 
-        <!-- Links de Navegación (Ahora generados dinámicamente) -->
-        <nav class="flex-1">
+        <!-- Links de Navegación -->
+        <nav class="flex-1 space-y-1">
             <template v-for="link in navigationLinks" :key="link.name">
-                <!-- Usamos v-if con nuestra función 'can' para mostrar/ocultar el enlace -->
                 <Link
                     v-if="can(link.permission)"
                     :href="link.href"
                     :class="{
-                        'bg-gray-100 text-gray-900': $page.url.startsWith(
-                            link.href.substring(link.href.lastIndexOf('/'))
-                        ),
-                        'text-gray-600 hover:bg-gray-100 hover:text-gray-900': !$page.url.startsWith(
-                            link.href.substring(link.href.lastIndexOf('/'))
-                        ),
+                        'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-l-4 border-blue-600':
+                            $page.url.startsWith(link.href.substring(link.href.lastIndexOf('/'))),
+                        'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200':
+                            !$page.url.startsWith(link.href.substring(link.href.lastIndexOf('/'))),
                     }"
-                    class="flex items-center px-4 py-2 mt-2 transition-colors duration-300 transform rounded-md"
+                    class="flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-200 group"
                 >
-                    <span class="mx-4 font-medium">{{ link.name }}</span>
+                    <span class="truncate">{{ link.name }}</span>
                 </Link>
             </template>
         </nav>

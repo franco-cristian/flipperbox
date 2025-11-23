@@ -16,29 +16,46 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Profile" />
+    <Head title="Perfil" />
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">Profile</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">Configuración del Perfil</h2>
+            </div>
         </template>
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                <div class="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                    <UpdateProfileInformationForm
-                        :must-verify-email="mustVerifyEmail"
-                        :status="status"
-                        class="max-w-xl"
-                    />
+                <!-- Información del Perfil -->
+                <div
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
+                    <div class="p-8">
+                        <UpdateProfileInformationForm
+                            :must-verify-email="mustVerifyEmail"
+                            :status="status"
+                            class="max-w-xl"
+                        />
+                    </div>
                 </div>
 
-                <div class="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                    <UpdatePasswordForm class="max-w-xl" />
+                <!-- Actualizar Contraseña -->
+                <div
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
+                    <div class="p-8">
+                        <UpdatePasswordForm class="max-w-xl" />
+                    </div>
                 </div>
 
-                <div class="bg-white p-4 shadow sm:rounded-lg sm:p-8">
-                    <DeleteUserForm class="max-w-xl" />
+                <!-- Eliminar Cuenta -->
+                <div
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
+                    <div class="p-8">
+                        <DeleteUserForm class="max-w-xl" />
+                    </div>
                 </div>
             </div>
         </div>

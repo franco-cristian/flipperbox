@@ -1,6 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
+import InputLabel from '@/Components/InputLabel.vue';
+import InputError from '@/Components/InputError.vue';
 import { ref, computed } from 'vue';
 
 const props = defineProps({
@@ -116,36 +118,42 @@ const changeMonth = (offset) => {
     <Head title="Gestión de Cupos" />
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Cupos Diarios</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">Gestión de Cupos Diarios</h2>
+            </div>
         </template>
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
+                <div
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
+                    <div class="p-8">
                         <!-- Controles del Calendario -->
-                        <div class="flex justify-between items-center mb-4">
+                        <div class="flex justify-between items-center mb-8">
                             <button
-                                class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition"
+                                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm"
                                 @click="changeMonth(-1)"
                             >
-                                &lt;
+                                &larr; Anterior
                             </button>
-                            <h3 class="text-lg font-semibold">{{ displayMonth }} {{ displayYear }}</h3>
+                            <h3 class="text-xl font-bold text-gray-800 dark:text-white">
+                                {{ displayMonth }} {{ displayYear }}
+                            </h3>
                             <button
-                                class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition"
+                                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm"
                                 @click="changeMonth(1)"
                             >
-                                &gt;
+                                Siguiente &rarr;
                             </button>
                         </div>
 
                         <!-- Calendario -->
-                        <div class="grid grid-cols-7 gap-2 text-center">
+                        <div class="grid grid-cols-7 gap-3 text-center">
                             <div
                                 v-for="day in ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']"
                                 :key="day"
-                                class="font-bold text-sm text-gray-600 py-2"
+                                class="font-bold text-sm text-gray-600 dark:text-gray-400 py-3"
                             >
                                 {{ day }}
                             </div>
@@ -153,25 +161,27 @@ const changeMonth = (offset) => {
                             <div
                                 v-for="day in daysInMonth"
                                 :key="day"
-                                class="p-2 border rounded cursor-pointer hover:bg-gray-50 min-h-[6rem] flex flex-col justify-between transition"
+                                class="p-3 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[5rem] flex flex-col justify-between transition-all duration-200 bg-white dark:bg-gray-800"
                                 @click="openModal(day)"
                             >
-                                <div class="font-bold text-right">{{ day }}</div>
-                                <div v-if="getCapacityForDate(day)" class="text-xs text-left">
-                                    <p>
-                                        Reservados:
-                                        <span class="font-bold text-green-600">{{
+                                <div class="font-bold text-right text-gray-700 dark:text-gray-300">{{ day }}</div>
+                                <div v-if="getCapacityForDate(day)" class="text-xs text-left space-y-1">
+                                    <p class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">Reservados:</span>
+                                        <span class="font-bold text-green-600 dark:text-green-400">{{
                                             getCapacityForDate(day).booked_slots
                                         }}</span>
                                     </p>
-                                    <p>
-                                        Total:
-                                        <span class="font-bold text-blue-600">{{
+                                    <p class="flex justify-between">
+                                        <span class="text-gray-600 dark:text-gray-400">Total:</span>
+                                        <span class="font-bold text-blue-600 dark:text-blue-400">{{
                                             getCapacityForDate(day).total_slots
                                         }}</span>
                                     </p>
                                 </div>
-                                <div v-else class="text-xs text-left text-gray-400">Sin definir</div>
+                                <div v-else class="text-xs text-left text-gray-400 dark:text-gray-500 italic">
+                                    Sin definir
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -182,43 +192,46 @@ const changeMonth = (offset) => {
         <!-- Modal para editar capacidad -->
         <div
             v-if="selectedDate"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300"
             @click.self="closeModal"
         >
-            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <h3 class="text-lg font-bold mb-4">Establecer Capacidad para el {{ selectedDate }}</h3>
+            <div
+                class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+            >
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">
+                    Establecer Capacidad para el {{ selectedDate }}
+                </h3>
 
                 <!-- Mostrar errores generales del formulario -->
-                <div v-if="form.hasErrors" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                    <p>Por favor, corrige los siguientes errores:</p>
-                    <ul class="list-disc list-inside mt-1">
+                <div
+                    v-if="form.hasErrors"
+                    class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl"
+                >
+                    <p class="font-semibold">Por favor, corrige los siguientes errores:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
                         <li v-for="error in Object.values(form.errors)" :key="error">{{ error }}</li>
                     </ul>
                 </div>
 
-                <form @submit.prevent="submit">
+                <form class="space-y-6" @submit.prevent="submit">
                     <div>
-                        <label for="total_slots" class="block font-medium text-sm text-gray-700"
-                            >Número Total de Cupos</label
-                        >
+                        <InputLabel for="total_slots" value="Número Total de Cupos" />
                         <input
                             id="total_slots"
-                            v-model="form.total_slots"
+                            v-model.number="form.total_slots"
                             type="number"
-                            :class="{ 'border-red-500': form.errors.total_slots }"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm transition-colors duration-200"
+                            :class="{ 'border-red-500 dark:border-red-400': form.errors.total_slots }"
                             min="1"
                             required
                         />
-                        <div v-if="form.errors.total_slots" class="text-sm text-red-600 mt-1">
-                            {{ form.errors.total_slots }}
-                        </div>
+                        <InputError class="mt-2" :message="form.errors.total_slots" />
                     </div>
 
-                    <div class="mt-6 flex justify-end space-x-3">
+                    <div class="flex justify-end space-x-4 pt-6 border-t border-gray-100 dark:border-gray-700">
                         <button
                             type="button"
-                            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
+                            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm"
                             :disabled="form.processing"
                             @click="closeModal"
                         >
@@ -226,7 +239,7 @@ const changeMonth = (offset) => {
                         </button>
                         <button
                             type="submit"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 disabled:opacity-50"
                             :disabled="form.processing"
                         >
                             <span v-if="form.processing">Guardando...</span>

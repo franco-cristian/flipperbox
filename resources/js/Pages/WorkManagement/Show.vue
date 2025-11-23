@@ -64,7 +64,7 @@ const submitMechanicAssignment = () =>
         preserveScroll: true,
     });
 
-// --- LÓGICA PARA MODALES DE CONFIRMACIÓN (REFACTORIZADA) ---
+// --- LÓGICA PARA MODALES DE CONFIRMACIÓN ---
 const confirmingAction = ref(false);
 const actionToConfirm = ref({}); // Objeto para guardar la configuración completa del modal
 
@@ -148,12 +148,15 @@ const closeModal = () => (confirmingAction.value = false);
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">
                     Detalle de Orden de Trabajo #{{ workOrder.id }}
                 </h2>
-                <Link :href="route('work-orders.index')" class="text-sm text-gray-700 underline"
-                    >&larr; Volver al listado</Link
+                <Link
+                    :href="route('work-orders.index')"
+                    class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline transition"
                 >
+                    &larr; Volver al listado
+                </Link>
             </div>
         </template>
 
@@ -164,11 +167,11 @@ const closeModal = () => (confirmingAction.value = false);
                     <!-- Mensaje de Advertencia si está Finalizada -->
                     <div
                         v-if="isFinalized"
-                        class="p-4 rounded-md"
+                        class="p-4 rounded-xl border transition-colors duration-300"
                         :class="
                             workOrder.status === 'Completada'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
+                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
                         "
                     >
                         <p class="font-bold">
@@ -178,285 +181,434 @@ const closeModal = () => (confirmingAction.value = false);
                     </div>
 
                     <!-- Productos del Inventario -->
-                    <div class="bg-white shadow sm:rounded-lg p-6">
-                        <h3 class="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Productos del Inventario</h3>
-                        <form
-                            v-if="!isFinalized && can('gestionar ordenes de trabajo')"
-                            class="flex gap-4 items-end mb-4"
-                            @submit.prevent="submitProduct"
-                        >
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-700">Producto</label
-                                ><select
-                                    v-model="addProductForm.product_id"
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"
-                                >
-                                    <option :value="null" disabled>Selecciona un producto</option>
-                                    <option v-for="product in products" :key="product.id" :value="product.id">
-                                        {{ product.name }} (Stock: {{ product.current_stock }})
-                                    </option>
-                                </select>
-                                <div v-if="addProductForm.errors.product_id" class="text-sm text-red-600 mt-1">
-                                    {{ addProductForm.errors.product_id }}
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Cantidad</label
-                                ><input
-                                    v-model="addProductForm.quantity"
-                                    type="number"
-                                    class="mt-1 block w-24 border-gray-300 rounded-md shadow-sm text-sm"
-                                />
-                                <div v-if="addProductForm.errors.quantity" class="text-sm text-red-600 mt-1">
-                                    {{ addProductForm.errors.quantity }}
-                                </div>
-                            </div>
-                            <button
-                                type="submit"
-                                class="px-4 py-2 bg-gray-800 text-white rounded-md h-fit text-sm"
-                                :disabled="addProductForm.processing"
+                    <div
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                    >
+                        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Productos del Inventario</h3>
+                        </div>
+                        <div class="p-6">
+                            <form
+                                v-if="!isFinalized && can('gestionar ordenes de trabajo')"
+                                class="flex gap-4 items-end mb-6"
+                                @submit.prevent="submitProduct"
                             >
-                                Agregar
-                            </button>
-                        </form>
-                        <table v-if="workOrder.products && workOrder.products.length > 0" class="w-full text-sm">
-                            <tbody>
-                                <tr v-for="product in workOrder.products" :key="`prod-${product.id}`" class="border-b">
-                                    <td class="py-2">
-                                        {{ product.name }}
-                                        <span
-                                            v-if="product.deleted_at"
-                                            class="ml-2 text-xs text-red-500 bg-red-100 px-2 py-1 rounded-full"
-                                            >Archivado</span
-                                        >
-                                    </td>
-                                    <td class="py-2 text-center">
-                                        {{ product.pivot.quantity }} x ${{ product.pivot.unit_price }}
-                                    </td>
-                                    <td class="py-2 text-right font-bold">
-                                        ${{ (product.pivot.quantity * product.pivot.unit_price).toFixed(2) }}
-                                    </td>
-                                    <td
-                                        v-if="!isFinalized && can('gestionar ordenes de trabajo')"
-                                        class="py-2 text-right pl-4"
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                        >Producto</label
                                     >
-                                        <button
-                                            class="text-red-500 hover:text-red-700 text-xs"
-                                            @click="confirmItemDeletion(product, 'product')"
+                                    <select
+                                        v-model="addProductForm.product_id"
+                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                    >
+                                        <option :value="null" disabled>Selecciona un producto</option>
+                                        <option v-for="product in products" :key="product.id" :value="product.id">
+                                            {{ product.name }} (Stock: {{ product.current_stock }})
+                                        </option>
+                                    </select>
+                                    <div
+                                        v-if="addProductForm.errors.product_id"
+                                        class="text-sm text-red-600 dark:text-red-400 mt-1"
+                                    >
+                                        {{ addProductForm.errors.product_id }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                        >Cantidad</label
+                                    >
+                                    <input
+                                        v-model="addProductForm.quantity"
+                                        type="number"
+                                        class="mt-1 block w-24 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                    />
+                                    <div
+                                        v-if="addProductForm.errors.quantity"
+                                        class="text-sm text-red-600 dark:text-red-400 mt-1"
+                                    >
+                                        {{ addProductForm.errors.quantity }}
+                                    </div>
+                                </div>
+                                <button
+                                    type="submit"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 text-sm"
+                                    :disabled="addProductForm.processing"
+                                >
+                                    Agregar
+                                </button>
+                            </form>
+                            <table
+                                v-if="workOrder.products && workOrder.products.length > 0"
+                                class="w-full text-sm text-left text-gray-500 dark:text-gray-400"
+                            >
+                                <thead
+                                    class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700"
+                                >
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 font-bold tracking-wider">Producto</th>
+                                        <th scope="col" class="px-6 py-3 font-bold tracking-wider text-center">
+                                            Cantidad
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 font-bold tracking-wider text-right">Total</th>
+                                        <th
+                                            v-if="!isFinalized && can('gestionar ordenes de trabajo')"
+                                            scope="col"
+                                            class="px-6 py-3 font-bold tracking-wider text-right"
                                         >
-                                            Quitar
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <p v-else class="text-sm text-gray-500 italic">No hay productos agregados a esta orden.</p>
+                                            Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    <tr
+                                        v-for="product in workOrder.products"
+                                        :key="`prod-${product.id}`"
+                                        class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
+                                    >
+                                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                            {{ product.name }}
+                                            <span
+                                                v-if="product.deleted_at"
+                                                class="ml-2 text-xs text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-full"
+                                                >Archivado</span
+                                            >
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            {{ product.pivot.quantity }} x ${{ product.pivot.unit_price }}
+                                        </td>
+                                        <td class="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">
+                                            ${{ (product.pivot.quantity * product.pivot.unit_price).toFixed(2) }}
+                                        </td>
+                                        <td
+                                            v-if="!isFinalized && can('gestionar ordenes de trabajo')"
+                                            class="px-6 py-4 text-right"
+                                        >
+                                            <button
+                                                class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition text-sm"
+                                                @click="confirmItemDeletion(product, 'product')"
+                                            >
+                                                Quitar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
+                                No hay productos agregados a esta orden.
+                            </p>
+                        </div>
                     </div>
 
                     <!-- Servicios (Mano de Obra) -->
-                    <div class="bg-white shadow sm:rounded-lg p-6">
-                        <h3 class="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Servicios (Mano de Obra)</h3>
-                        <form
-                            v-if="!isFinalized && can('gestionar ordenes de trabajo')"
-                            class="flex gap-4 items-end mb-4"
-                            @submit.prevent="submitService"
-                        >
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-700">Servicio</label
-                                ><select
-                                    v-model="addServiceForm.service_id"
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"
-                                >
-                                    <option :value="null" disabled>Selecciona un servicio</option>
-                                    <option v-for="service in services" :key="service.id" :value="service.id">
-                                        {{ service.name }}
-                                    </option>
-                                </select>
-                            </div>
-                            <button
-                                type="submit"
-                                class="px-4 py-2 bg-gray-800 text-white rounded-md h-fit text-sm"
-                                :disabled="addServiceForm.processing"
+                    <div
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                    >
+                        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Servicios (Mano de Obra)</h3>
+                        </div>
+                        <div class="p-6">
+                            <form
+                                v-if="!isFinalized && can('gestionar ordenes de trabajo')"
+                                class="flex gap-4 items-end mb-6"
+                                @submit.prevent="submitService"
                             >
-                                Agregar
-                            </button>
-                        </form>
-                        <table v-if="workOrder.services && workOrder.services.length > 0" class="w-full text-sm">
-                            <tbody>
-                                <tr v-for="service in workOrder.services" :key="`serv-${service.id}`" class="border-b">
-                                    <td class="py-2">{{ service.name }}</td>
-                                    <td class="py-2 text-right font-bold">${{ service.pivot.price }}</td>
-                                    <td
-                                        v-if="!isFinalized && can('gestionar ordenes de trabajo')"
-                                        class="py-2 text-right pl-4"
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                        >Servicio</label
                                     >
-                                        <button
-                                            class="text-red-500 hover:text-red-700 text-xs"
-                                            @click="confirmItemDeletion(service, 'service')"
+                                    <select
+                                        v-model="addServiceForm.service_id"
+                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                    >
+                                        <option :value="null" disabled>Selecciona un servicio</option>
+                                        <option v-for="service in services" :key="service.id" :value="service.id">
+                                            {{ service.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <button
+                                    type="submit"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 text-sm"
+                                    :disabled="addServiceForm.processing"
+                                >
+                                    Agregar
+                                </button>
+                            </form>
+                            <table
+                                v-if="workOrder.services && workOrder.services.length > 0"
+                                class="w-full text-sm text-left text-gray-500 dark:text-gray-400"
+                            >
+                                <thead
+                                    class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700"
+                                >
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 font-bold tracking-wider">Servicio</th>
+                                        <th scope="col" class="px-6 py-3 font-bold tracking-wider text-right">
+                                            Precio
+                                        </th>
+                                        <th
+                                            v-if="!isFinalized && can('gestionar ordenes de trabajo')"
+                                            scope="col"
+                                            class="px-6 py-3 font-bold tracking-wider text-right"
                                         >
-                                            Quitar
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <p v-else class="text-sm text-gray-500 italic">No hay servicios agregados a esta orden.</p>
+                                            Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    <tr
+                                        v-for="service in workOrder.services"
+                                        :key="`serv-${service.id}`"
+                                        class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
+                                    >
+                                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                            {{ service.name }}
+                                        </td>
+                                        <td class="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">
+                                            ${{ service.pivot.price }}
+                                        </td>
+                                        <td
+                                            v-if="!isFinalized && can('gestionar ordenes de trabajo')"
+                                            class="px-6 py-4 text-right"
+                                        >
+                                            <button
+                                                class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition text-sm"
+                                                @click="confirmItemDeletion(service, 'service')"
+                                            >
+                                                Quitar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
+                                No hay servicios agregados a esta orden.
+                            </p>
+                        </div>
                     </div>
 
                     <!-- Costos Externos -->
-                    <div class="bg-white shadow sm:rounded-lg p-6">
-                        <h3 class="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Costos Externos</h3>
-                        <form
-                            v-if="!isFinalized && can('gestionar ordenes de trabajo')"
-                            class="space-y-4 mb-4"
-                            @submit.prevent="submitExternalCost"
-                        >
-                            <div>
-                                <label for="ext-desc" class="block text-sm font-medium text-gray-700">Descripción</label
-                                ><input
-                                    id="ext-desc"
-                                    v-model="addExternalCostForm.description"
-                                    type="text"
-                                    placeholder="Ej: Repuesto comprado por fuera"
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"
-                                    required
-                                />
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label for="ext-cost" class="block text-sm font-medium text-gray-700"
-                                        >Costo ($)</label
-                                    ><input
-                                        id="ext-cost"
-                                        v-model="addExternalCostForm.cost"
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="Lo que costó"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label for="ext-price" class="block text-sm font-medium text-gray-700"
-                                        >Precio Venta ($)</label
-                                    ><input
-                                        id="ext-price"
-                                        v-model="addExternalCostForm.price"
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="A cobrar al cliente"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm"
-                                        required
-                                    />
-                                </div>
-                            </div>
-                            <button
-                                type="submit"
-                                class="px-4 py-2 bg-gray-800 text-white rounded-md w-full text-sm"
-                                :disabled="addExternalCostForm.processing"
+                    <div
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                    >
+                        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Costos Externos</h3>
+                        </div>
+                        <div class="p-6">
+                            <form
+                                v-if="!isFinalized && can('gestionar ordenes de trabajo')"
+                                class="space-y-4 mb-6"
+                                @submit.prevent="submitExternalCost"
                             >
-                                Agregar Costo Externo
-                            </button>
-                        </form>
-                        <table
-                            v-if="workOrder.external_costs && workOrder.external_costs.length > 0"
-                            class="w-full text-sm"
-                        >
-                            <tbody>
-                                <tr v-for="cost in workOrder.external_costs" :key="`ext-${cost.id}`" class="border-b">
-                                    <td class="py-2">{{ cost.description }}</td>
-                                    <td class="py-2 text-right font-bold">${{ cost.price }}</td>
-                                    <td
-                                        v-if="!isFinalized && can('gestionar ordenes de trabajo')"
-                                        class="py-2 text-right pl-4"
+                                <div>
+                                    <label
+                                        for="ext-desc"
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                        >Descripción</label
                                     >
-                                        <button
-                                            class="text-red-500 hover:text-red-700 text-xs"
-                                            @click="confirmItemDeletion(cost, 'externalCost')"
+                                    <input
+                                        id="ext-desc"
+                                        v-model="addExternalCostForm.description"
+                                        type="text"
+                                        placeholder="Ej: Repuesto comprado por fuera"
+                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                        required
+                                    />
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label
+                                            for="ext-cost"
+                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                            >Costo ($)</label
                                         >
-                                            Quitar
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <p v-else class="text-sm text-gray-500 italic">
-                            No hay costos externos agregados a esta orden.
-                        </p>
+                                        <input
+                                            id="ext-cost"
+                                            v-model="addExternalCostForm.cost"
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="Lo que costó"
+                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label
+                                            for="ext-price"
+                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                            >Precio Venta ($)</label
+                                        >
+                                        <input
+                                            id="ext-price"
+                                            v-model="addExternalCostForm.price"
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="A cobrar al cliente"
+                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    type="submit"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 w-full text-sm"
+                                    :disabled="addExternalCostForm.processing"
+                                >
+                                    Agregar Costo Externo
+                                </button>
+                            </form>
+                            <table
+                                v-if="workOrder.external_costs && workOrder.external_costs.length > 0"
+                                class="w-full text-sm text-left text-gray-500 dark:text-gray-400"
+                            >
+                                <thead
+                                    class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700"
+                                >
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 font-bold tracking-wider">Descripción</th>
+                                        <th scope="col" class="px-6 py-3 font-bold tracking-wider text-right">
+                                            Precio
+                                        </th>
+                                        <th
+                                            v-if="!isFinalized && can('gestionar ordenes de trabajo')"
+                                            scope="col"
+                                            class="px-6 py-3 font-bold tracking-wider text-right"
+                                        >
+                                            Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    <tr
+                                        v-for="cost in workOrder.external_costs"
+                                        :key="`ext-${cost.id}`"
+                                        class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
+                                    >
+                                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                            {{ cost.description }}
+                                        </td>
+                                        <td class="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">
+                                            ${{ cost.price }}
+                                        </td>
+                                        <td
+                                            v-if="!isFinalized && can('gestionar ordenes de trabajo')"
+                                            class="px-6 py-4 text-right"
+                                        >
+                                            <button
+                                                class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition text-sm"
+                                                @click="confirmItemDeletion(cost, 'externalCost')"
+                                            >
+                                                Quitar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p v-else class="text-sm text-gray-500 dark:text-gray-400 italic">
+                                No hay costos externos agregados a esta orden.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Columna Derecha: Estado y Total -->
                 <div class="lg:col-span-1 space-y-6">
-                    <div class="bg-white shadow sm:rounded-lg p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Detalles de la Orden</h3>
-                        <div class="space-y-2 text-sm">
-                            <p>
-                                <strong>Cliente:</strong> {{ workOrder.vehicle.cliente.nombre }}
-                                {{ workOrder.vehicle.cliente.apellido }}
-                            </p>
-                            <p>
-                                <strong>Vehículo:</strong> {{ workOrder.vehicle.marca }}
-                                {{ workOrder.vehicle.modelo }} ({{ workOrder.vehicle.patente }})
-                            </p>
-                            <p><strong>Fecha Ingreso:</strong> {{ formatDate(workOrder.entry_date) }}</p>
-                            <p><strong>Descripción:</strong> {{ workOrder.description }}</p>
+                    <div
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                    >
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Detalles de la Orden</h3>
+                            <div class="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                                <p>
+                                    <strong class="text-gray-900 dark:text-white">Cliente:</strong>
+                                    {{ workOrder.vehicle.cliente.name }}
+                                    {{ workOrder.vehicle.cliente.apellido }}
+                                </p>
+                                <p>
+                                    <strong class="text-gray-900 dark:text-white">Vehículo:</strong>
+                                    {{ workOrder.vehicle.marca }} {{ workOrder.vehicle.modelo }} ({{
+                                        workOrder.vehicle.patente
+                                    }})
+                                </p>
+                                <p>
+                                    <strong class="text-gray-900 dark:text-white">Fecha Ingreso:</strong>
+                                    {{ formatDate(workOrder.entry_date) }}
+                                </p>
+                                <p>
+                                    <strong class="text-gray-900 dark:text-white">Descripción:</strong>
+                                    {{ workOrder.description }}
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    <div class="bg-white shadow sm:rounded-lg p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Asignar Mecánico</h3>
-                        <form @submit.prevent="submitMechanicAssignment">
-                            <select
-                                v-model="assignMechanicForm.mechanic_id"
-                                class="block w-full border-gray-300 rounded-md shadow-sm text-sm"
-                                @change="submitMechanicAssignment"
-                            >
-                                <option :value="null">Sin asignar</option>
-                                <option v-for="mechanic in mechanics" :key="mechanic.id" :value="mechanic.id">
-                                    {{ mechanic.name }}
-                                </option>
-                            </select>
-                        </form>
-                        <p class="text-sm mt-4">
-                            <strong>Estado Actual: </strong
-                            ><span
-                                class="px-2 py-1 font-semibold leading-tight text-xs rounded-full"
-                                :class="{
-                                    'bg-yellow-100 text-yellow-800': workOrder.status === 'Pendiente',
-                                    'bg-blue-100 text-blue-800': workOrder.status === 'En Progreso',
-                                    'bg-green-100 text-green-800': workOrder.status === 'Completada',
-                                    'bg-red-100 text-red-800': workOrder.status === 'Cancelada',
-                                }"
-                                >{{ workOrder.status }}</span
-                            >
-                        </p>
+                    <div
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                    >
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Asignar Mecánico</h3>
+                            <form @submit.prevent="submitMechanicAssignment">
+                                <select
+                                    v-model="assignMechanicForm.mechanic_id"
+                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600"
+                                    @change="submitMechanicAssignment"
+                                >
+                                    <option :value="null">Sin asignar</option>
+                                    <option v-for="mechanic in mechanics" :key="mechanic.id" :value="mechanic.id">
+                                        {{ mechanic.name }}
+                                    </option>
+                                </select>
+                            </form>
+                            <p class="text-sm mt-4">
+                                <strong class="text-gray-900 dark:text-white">Estado Actual: </strong
+                                ><span
+                                    class="px-3 py-1 font-semibold leading-tight text-xs rounded-full"
+                                    :class="{
+                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300':
+                                            workOrder.status === 'Pendiente',
+                                        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300':
+                                            workOrder.status === 'En Progreso',
+                                        'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300':
+                                            workOrder.status === 'Completada',
+                                        'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300':
+                                            workOrder.status === 'Cancelada',
+                                    }"
+                                    >{{ workOrder.status }}</span
+                                >
+                            </p>
+                        </div>
                     </div>
                     <!-- Panel de Acciones de la Orden -->
                     <div
                         v-if="!isFinalized && can('gestionar ordenes de trabajo')"
-                        class="bg-white shadow sm:rounded-lg p-6"
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
                     >
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Acciones de la Orden</h3>
-                        <div class="space-y-4">
-                            <button
-                                class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-semibold text-sm"
-                                @click="confirmStatusChange('Completada')"
-                            >
-                                Marcar como Completada
-                            </button>
-                            <button
-                                class="w-full px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 font-semibold text-sm"
-                                @click="confirmStatusChange('Cancelada')"
-                            >
-                                Marcar como Cancelada
-                            </button>
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Acciones de la Orden</h3>
+                            <div class="space-y-3">
+                                <button
+                                    class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 text-sm"
+                                    @click="confirmStatusChange('Completada')"
+                                >
+                                    Marcar como Completada
+                                </button>
+                                <button
+                                    class="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl shadow-md transition-all duration-200 text-sm"
+                                    @click="confirmStatusChange('Cancelada')"
+                                >
+                                    Marcar como Cancelada
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="bg-white shadow sm:rounded-lg p-6 text-right">
-                        <h3 class="text-lg font-medium text-gray-900">Total de la Orden</h3>
-                        <p class="text-4xl font-extrabold text-gray-900 mt-2">
-                            ${{ parseFloat(workOrder.total || 0).toFixed(2) }}
-                        </p>
+                    <div
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                    >
+                        <div class="p-6 text-center">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Total de la Orden</h3>
+                            <p class="text-3xl font-extrabold text-gray-900 dark:text-white mt-2">
+                                ${{ parseFloat(workOrder.total || 0).toFixed(2) }}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

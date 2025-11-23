@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
 import ConfirmationModal from '@/Components/ConfirmationModal.vue';
+import InputLabel from '@/Components/InputLabel.vue';
 import { ref, watch } from 'vue';
 import { throttle } from 'lodash';
 
@@ -33,10 +34,10 @@ watch(
 );
 
 const statusClass = (status) => ({
-    'bg-green-100 text-green-800': status === 'Confirmada',
-    'bg-blue-100 text-blue-800': status === 'Asistió',
-    'bg-gray-100 text-gray-800': status === 'Ausente',
-    'bg-red-100 text-red-800': status === 'Cancelada',
+    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300': status === 'Confirmada',
+    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': status === 'Asistió',
+    'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300': status === 'Ausente',
+    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300': status === 'Cancelada',
 });
 
 const formatDate = (dateString) =>
@@ -99,22 +100,27 @@ const closeModal = () => (confirmingAction.value = false);
     <Head title="Gestión de Reservas" />
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de Reservas de Clientes</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">
+                    Gestión de Reservas de Clientes
+                </h2>
+            </div>
         </template>
+
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
                     <!-- Filtros -->
-                    <div class="p-6 bg-gray-50 border-b">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="p-8 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                             <div>
-                                <label for="status" class="block font-medium text-sm text-gray-700"
-                                    >Filtrar por Estado</label
-                                >
+                                <InputLabel for="status" value="Filtrar por Estado" />
                                 <select
                                     id="status"
                                     v-model="filters.status"
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
                                 >
                                     <option value="">Todos</option>
                                     <option value="Confirmada">Confirmada</option>
@@ -124,37 +130,43 @@ const closeModal = () => (confirmingAction.value = false);
                                 </select>
                             </div>
                             <div>
-                                <label for="date" class="block font-medium text-sm text-gray-700"
-                                    >Filtrar por Fecha</label
-                                >
+                                <InputLabel for="date" value="Filtrar por Fecha" />
                                 <input
                                     id="date"
                                     v-model="filters.date"
                                     type="date"
-                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
                                 />
                             </div>
                         </div>
                     </div>
-                    <div class="p-6">
+
+                    <div class="p-8">
                         <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left text-gray-500">
-                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                <thead
+                                    class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700"
+                                >
                                     <tr>
-                                        <th scope="col" class="px-6 py-3">Fecha Reserva</th>
-                                        <th scope="col" class="px-6 py-3">Cliente</th>
-                                        <th scope="col" class="px-6 py-3">Vehículo</th>
-                                        <th scope="col" class="px-6 py-3">Estado</th>
-                                        <th scope="col" class="px-6 py-3 text-right">Acciones</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider">Fecha Reserva</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider">Cliente</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider">Vehículo</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider">Estado</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider text-right">
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                     <tr
                                         v-for="reservation in reservations.data"
                                         :key="reservation.id"
-                                        class="bg-white border-b hover:bg-gray-50"
+                                        class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                                     >
-                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                        <th
+                                            scope="row"
+                                            class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
+                                        >
                                             {{ formatDate(reservation.reservation_date) }}
                                         </th>
                                         <td class="px-6 py-4">
@@ -167,17 +179,16 @@ const closeModal = () => (confirmingAction.value = false);
                                         </td>
                                         <td class="px-6 py-4">
                                             <span
-                                                class="px-2 py-1 font-semibold leading-tight text-xs rounded-full"
+                                                class="px-3 py-1 font-semibold leading-tight text-xs rounded-full"
                                                 :class="statusClass(reservation.status)"
                                             >
                                                 {{ reservation.status }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 text-right">
+                                        <td class="px-6 py-4 text-right whitespace-nowrap text-sm font-medium">
                                             <div v-if="reservation.status === 'Confirmada'">
-                                                <!-- AHORA LOS BOTONES PUEDEN ESTAR DESHABILITADOS -->
                                                 <button
-                                                    class="font-medium text-green-600 hover:underline mr-4"
+                                                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl shadow-md transition-all duration-200 mr-3"
                                                     :disabled="isFutureReservation(reservation.reservation_date)"
                                                     :class="{
                                                         'opacity-50 cursor-not-allowed': isFutureReservation(
@@ -190,7 +201,7 @@ const closeModal = () => (confirmingAction.value = false);
                                                     Asistió
                                                 </button>
                                                 <button
-                                                    class="font-medium text-orange-600 hover:underline"
+                                                    class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl shadow-md transition-all duration-200"
                                                     :disabled="isFutureReservation(reservation.reservation_date)"
                                                     :class="{
                                                         'opacity-50 cursor-not-allowed': isFutureReservation(
@@ -206,20 +217,42 @@ const closeModal = () => (confirmingAction.value = false);
                                         </td>
                                     </tr>
                                     <tr v-if="reservations.data.length === 0">
-                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                                            No se encontraron reservas con los filtros actuales.
+                                        <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <svg
+                                                    class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                    ></path>
+                                                </svg>
+                                                <p class="text-lg font-medium">No se encontraron reservas</p>
+                                                <p class="text-sm">con los filtros actuales.</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    <div v-if="reservations.links.length > 3" class="p-6 border-t">
+
+                    <!-- Paginación -->
+                    <div
+                        v-if="reservations.links.length > 3"
+                        class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                    >
                         <Pagination :links="reservations.links" />
                     </div>
                 </div>
             </div>
         </div>
+
         <ConfirmationModal
             :show="confirmingAction"
             :title="actionToConfirm.title"

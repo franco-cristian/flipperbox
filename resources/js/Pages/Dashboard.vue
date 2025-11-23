@@ -36,7 +36,7 @@ const doughnutChartData = computed(() => ({
     labels: props.workOrderStatusChart?.labels || [],
     datasets: [
         {
-            backgroundColor: ['#facc15', '#3b82f6', '#22c55e', '#ef4444', '#8b5cf6'], // Colores para diferentes estados
+            backgroundColor: ['#facc15', '#3b82f6', '#22c55e', '#ef4444', '#8b5cf6'],
             data: props.workOrderStatusChart?.data || [],
         },
     ],
@@ -48,7 +48,11 @@ const doughnutChartData = computed(() => ({
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard de Administración</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">
+                    Dashboard de Administración
+                </h2>
+            </div>
         </template>
 
         <div class="py-12">
@@ -58,7 +62,7 @@ const doughnutChartData = computed(() => ({
                     <StatCard>
                         <template #title>Ingresos del Mes (Completadas)</template>
                         <template #content>
-                            <p class="text-3xl font-bold text-gray-900">
+                            <p class="text-3xl font-bold text-gray-900 dark:text-white">
                                 {{ formatCurrency(ingresosMes) }}
                             </p>
                         </template>
@@ -68,7 +72,7 @@ const doughnutChartData = computed(() => ({
                     <StatCard>
                         <template #title>Estado de Órdenes (Últimos 30 días)</template>
                         <template #content>
-                            <div class="h-32">
+                            <div class="h-40">
                                 <DoughnutChart
                                     v-if="
                                         workOrderStatusChart &&
@@ -77,7 +81,9 @@ const doughnutChartData = computed(() => ({
                                     "
                                     :chart-data="doughnutChartData"
                                 />
-                                <p v-else class="text-gray-500 text-center py-8">No hay datos disponibles.</p>
+                                <p v-else class="text-gray-500 dark:text-gray-400 text-center py-8">
+                                    No hay datos disponibles.
+                                </p>
                             </div>
                         </template>
                     </StatCard>
@@ -90,15 +96,15 @@ const doughnutChartData = computed(() => ({
                                 <li
                                     v-for="product in topProducts"
                                     :key="product.name"
-                                    class="flex justify-between items-center text-sm"
+                                    class="flex justify-between items-center text-sm py-2 border-b border-gray-100 dark:border-gray-700 last:border-0"
                                 >
-                                    <span class="text-gray-700">{{ product.name }}</span>
-                                    <span class="font-semibold text-gray-900">{{
-                                        formatCurrency(product.total_revenue)
-                                    }}</span>
+                                    <span class="text-gray-700 dark:text-gray-300">{{ product.name }}</span>
+                                    <span class="font-semibold text-gray-900 dark:text-white">
+                                        {{ formatCurrency(product.total_revenue) }}
+                                    </span>
                                 </li>
                             </ul>
-                            <p v-else class="text-gray-500">No hay ventas registradas este mes.</p>
+                            <p v-else class="text-gray-500 dark:text-gray-400">No hay ventas registradas este mes.</p>
                         </template>
                     </StatCard>
 
@@ -113,7 +119,7 @@ const doughnutChartData = computed(() => ({
                                     "
                                     :chart-data="barChartData"
                                 />
-                                <p v-else class="text-gray-500 text-center py-16">
+                                <p v-else class="text-gray-500 dark:text-gray-400 text-center py-16">
                                     No hay actividad registrada en los últimos 30 días.
                                 </p>
                             </div>
@@ -128,16 +134,18 @@ const doughnutChartData = computed(() => ({
                                 <li
                                     v-for="product in lowStockProducts"
                                     :key="product.name"
-                                    class="flex justify-between items-center text-sm"
+                                    class="flex justify-between items-center text-sm py-2 border-b border-gray-100 dark:border-gray-700 last:border-0"
                                 >
-                                    <span class="text-gray-700">{{ product.name }}</span>
-                                    <span class="font-semibold text-red-600">
+                                    <span class="text-gray-700 dark:text-gray-300">{{ product.name }}</span>
+                                    <span class="font-semibold text-red-600 dark:text-red-400">
                                         {{ product.current_stock }} /
-                                        <span class="text-gray-500">{{ product.min_threshold }}</span>
+                                        <span class="text-gray-500 dark:text-gray-400">{{
+                                            product.min_threshold
+                                        }}</span>
                                     </span>
                                 </li>
                             </ul>
-                            <p v-else class="text-gray-500">No hay productos con stock bajo.</p>
+                            <p v-else class="text-gray-500 dark:text-gray-400">No hay productos con stock bajo.</p>
                         </template>
                     </StatCard>
                 </div>

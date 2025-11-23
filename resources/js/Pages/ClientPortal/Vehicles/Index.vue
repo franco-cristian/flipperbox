@@ -24,55 +24,69 @@ const deleteVehicle = () => {
 
 const closeModal = () => (confirmingVehicleDeletion.value = false);
 </script>
+
 <template>
     <Head title="Mis Vehículos" />
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Mis Vehículos</h2>
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">Mis Vehículos</h2>
                 <Link
                     :href="route('cliente.vehiculos.create')"
-                    class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 text-sm"
                 >
-                    Agregar Nuevo Vehículo
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Agregar Vehículo
                 </Link>
             </div>
         </template>
+
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
+                <div
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
+                    <div class="p-8">
                         <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left text-gray-500">
-                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                <thead
+                                    class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700"
+                                >
                                     <tr>
-                                        <th scope="col" class="px-6 py-3">Patente</th>
-                                        <th scope="col" class="px-6 py-3">Marca</th>
-                                        <th scope="col" class="px-6 py-3">Modelo</th>
-                                        <th scope="col" class="px-6 py-3">Año</th>
-                                        <th scope="col" class="px-6 py-3 text-right">Acciones</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider">Patente</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider">Marca</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider">Modelo</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider">Año</th>
+                                        <th scope="col" class="px-6 py-4 font-bold tracking-wider text-right">
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                     <tr
                                         v-for="vehiculo in vehiculos.data"
                                         :key="vehiculo.id"
-                                        class="bg-white border-b hover:bg-gray-50"
+                                        class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                                     >
-                                        <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                        <th
+                                            scope="row"
+                                            class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
+                                        >
                                             {{ vehiculo.patente }}
                                         </th>
                                         <td class="px-6 py-4">{{ vehiculo.marca }}</td>
                                         <td class="px-6 py-4">{{ vehiculo.modelo }}</td>
                                         <td class="px-6 py-4">{{ vehiculo.anio }}</td>
-                                        <td class="px-6 py-4 text-right">
+                                        <td class="px-6 py-4 text-right whitespace-nowrap text-sm font-medium">
                                             <Link
                                                 :href="route('cliente.vehiculos.edit', vehiculo.id)"
-                                                class="font-medium text-blue-600 hover:underline mr-4"
+                                                class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-4 transition"
                                                 >Editar</Link
                                             >
                                             <button
-                                                class="font-medium text-red-600 hover:underline"
+                                                class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition"
                                                 @click="confirmVehicleDeletion(vehiculo)"
                                             >
                                                 Eliminar
@@ -80,20 +94,42 @@ const closeModal = () => (confirmingVehicleDeletion.value = false);
                                         </td>
                                     </tr>
                                     <tr v-if="vehiculos.data.length === 0">
-                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                                            No tienes vehículos registrados. ¡Agrega tu primero!
+                                        <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <svg
+                                                    class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    ></path>
+                                                </svg>
+                                                <p class="text-lg font-medium">No tienes vehículos registrados.</p>
+                                                <p class="text-sm">¡Agrega tu primer vehículo!</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    <div v-if="vehiculos.links.length > 3" class="p-6 border-t">
+
+                    <!-- Paginación -->
+                    <div
+                        v-if="vehiculos.links.length > 3"
+                        class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                    >
                         <Pagination :links="vehiculos.links" />
                     </div>
                 </div>
             </div>
         </div>
+
         <ConfirmationModal
             :show="confirmingVehicleDeletion"
             title="Eliminar Vehículo"

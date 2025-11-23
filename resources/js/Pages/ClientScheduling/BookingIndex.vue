@@ -1,6 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import InputLabel from '@/Components/InputLabel.vue';
+import InputError from '@/Components/InputError.vue';
 import { ref, computed } from 'vue';
 
 const props = defineProps({
@@ -209,22 +211,29 @@ const changeMonth = (offset) => {
     <Head title="Solicitar Reserva" />
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Solicitar Reserva de Cupo</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">
+                    Solicitar Reserva de Cupo
+                </h2>
+            </div>
         </template>
 
         <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                 <!-- CASO 1: USUARIO SIN VEHÍCULOS -->
-                <div v-if="!hasVehicles" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-center">
-                        <h3 class="text-lg font-medium text-gray-900">¡Un paso más!</h3>
-                        <p class="mt-2 text-sm text-gray-600">
+                <div
+                    v-if="!hasVehicles"
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
+                    <div class="p-8 text-center">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">¡Un paso más!</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-6">
                             Para poder solicitar una reserva, primero necesitas agregar al menos un vehículo a tu
                             perfil.
                         </p>
                         <Link
                             :href="route('cliente.vehiculos.create')"
-                            class="mt-4 inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition"
+                            class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200"
                         >
                             Agregar mi Primer Vehículo
                         </Link>
@@ -236,24 +245,27 @@ const changeMonth = (offset) => {
                     <!-- SECCIÓN DE PRÓXIMAS RESERVAS -->
                     <div
                         v-if="upcomingReservations.length > 0"
-                        class="bg-white overflow-hidden shadow-sm sm:rounded-lg"
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
                     >
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Mis Próximas Reservas</h3>
-                            <div class="space-y-2">
+                        <div class="p-8">
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Mis Próximas Reservas</h3>
+                            <div class="space-y-4">
                                 <div
                                     v-for="reservation in upcomingReservations"
                                     :key="reservation.id"
-                                    class="text-sm text-gray-700 p-3 bg-blue-50 rounded-md flex justify-between items-center"
+                                    class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex justify-between items-center"
                                 >
-                                    <div>
-                                        <strong>{{ formatDisplayDate(reservation.reservation_date) }}</strong> -
+                                    <div class="text-gray-700 dark:text-gray-300">
+                                        <strong class="text-gray-900 dark:text-white">{{
+                                            formatDisplayDate(reservation.reservation_date)
+                                        }}</strong>
+                                        -
                                         {{ vehicles.find((v) => v.id === reservation.vehicle_id)?.marca }}
                                         ({{ vehicles.find((v) => v.id === reservation.vehicle_id)?.patente }})
                                     </div>
                                     <button
                                         v-if="reservation.can_cancel"
-                                        class="text-red-600 hover:text-red-800 text-xs font-medium px-2 py-1 border border-red-300 rounded hover:bg-red-50 transition"
+                                        class="px-4 py-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 text-sm font-medium"
                                         title="Cancelar esta reserva"
                                         @click="openCancelModal(reservation.id, $event)"
                                     >
@@ -265,30 +277,36 @@ const changeMonth = (offset) => {
                     </div>
 
                     <!-- SECCIÓN DEL CALENDARIO -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Solicitar Nueva Reserva</h3>
+                    <div
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                    >
+                        <div class="p-8">
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
+                                Solicitar Nueva Reserva
+                            </h3>
 
-                            <div class="flex justify-between items-center mb-4">
+                            <div class="flex justify-between items-center mb-8">
                                 <button
-                                    class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition"
+                                    class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm"
                                     @click="changeMonth(-1)"
                                 >
-                                    &lt;
+                                    &larr; Anterior
                                 </button>
-                                <h3 class="text-lg font-semibold">{{ displayMonth }} {{ displayYear }}</h3>
+                                <h3 class="text-xl font-bold text-gray-800 dark:text-white">
+                                    {{ displayMonth }} {{ displayYear }}
+                                </h3>
                                 <button
-                                    class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition"
+                                    class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm"
                                     @click="changeMonth(1)"
                                 >
-                                    &gt;
+                                    Siguiente &rarr;
                                 </button>
                             </div>
-                            <div class="grid grid-cols-7 gap-2 text-center">
+                            <div class="grid grid-cols-7 gap-3 text-center">
                                 <div
                                     v-for="day in ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']"
                                     :key="day"
-                                    class="font-bold text-sm text-gray-600 py-2"
+                                    class="font-bold text-sm text-gray-600 dark:text-gray-400 py-3"
                                 >
                                     {{ day }}
                                 </div>
@@ -297,45 +315,46 @@ const changeMonth = (offset) => {
                                     v-for="day in daysInMonth"
                                     :key="day"
                                     :class="{
-                                        'cursor-not-allowed bg-gray-100 text-gray-400':
+                                        'cursor-not-allowed bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-600 border-gray-300 dark:border-gray-700':
                                             getDayInfo(day).isPast ||
                                             getDayInfo(day).hasUserReservation ||
                                             !getDayInfo(day).capacity ||
                                             getDayInfo(day).capacity.available_slots <= 0,
-                                        'cursor-pointer hover:bg-blue-50':
+                                        'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-200 dark:border-gray-700':
                                             !getDayInfo(day).isPast &&
                                             !getDayInfo(day).hasUserReservation &&
                                             getDayInfo(day).capacity &&
                                             getDayInfo(day).capacity.available_slots > 0,
-                                        'bg-indigo-500 text-white cursor-default': getDayInfo(day).hasUserReservation,
+                                        'bg-blue-600 text-white cursor-default border-blue-500':
+                                            getDayInfo(day).hasUserReservation,
                                     }"
-                                    class="p-2 border rounded min-h-[7rem] flex flex-col justify-between transition"
+                                    class="p-3 border rounded-xl min-h-[5rem] flex flex-col justify-between transition-all duration-200 bg-white dark:bg-gray-800"
                                     @click="openModal(day)"
                                 >
-                                    <div class="font-bold text-right">{{ day }}</div>
+                                    <div class="font-bold text-right text-gray-700 dark:text-white">{{ day }}</div>
                                     <div class="text-xs text-left">
                                         <div v-if="getDayInfo(day).hasUserReservation">
                                             <p class="font-bold">Mi Reserva</p>
-                                            <p class="text-indigo-200">{{ getDayInfo(day).vehiclePatente }}</p>
-                                            <p v-if="getDayInfo(day).canCancel" class="text-indigo-200 text-xs mt-1">
+                                            <p class="text-blue-200">{{ getDayInfo(day).vehiclePatente }}</p>
+                                            <p v-if="getDayInfo(day).canCancel" class="text-blue-200 text-xs mt-1">
                                                 ✔️ Cancelable
                                             </p>
-                                            <p v-else class="text-indigo-200 text-xs mt-1">⚠️ No cancelable</p>
+                                            <p v-else class="text-blue-200 text-xs mt-1">⚠️ No cancelable</p>
                                         </div>
                                         <div v-else-if="!getDayInfo(day).isPast && getDayInfo(day).capacity">
                                             <p
                                                 v-if="getDayInfo(day).capacity.available_slots > 5"
-                                                class="font-bold text-green-600"
+                                                class="font-bold text-green-600 dark:text-green-400"
                                             >
                                                 Disponible
                                             </p>
                                             <p
                                                 v-else-if="getDayInfo(day).capacity.available_slots > 0"
-                                                class="font-bold text-orange-500"
+                                                class="font-bold text-orange-500 dark:text-orange-400"
                                             >
                                                 Pocos Cupos
                                             </p>
-                                            <p v-else class="font-bold text-red-500">Completo</p>
+                                            <p v-else class="font-bold text-red-500 dark:text-red-400">Completo</p>
                                         </div>
                                     </div>
                                 </div>
@@ -344,25 +363,32 @@ const changeMonth = (offset) => {
                     </div>
 
                     <!-- SECCIÓN HISTORIAL DE RESERVAS -->
-                    <div v-if="pastReservations.length > 0" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Historial de Reservas</h3>
+                    <div
+                        v-if="pastReservations.length > 0"
+                        class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                    >
+                        <div class="p-8">
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Historial de Reservas</h3>
                             <div class="overflow-x-auto">
-                                <table class="w-full text-sm text-left text-gray-500">
-                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                    <thead
+                                        class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700"
+                                    >
                                         <tr>
-                                            <th scope="col" class="px-6 py-3">Fecha</th>
-                                            <th scope="col" class="px-6 py-3">Vehículo</th>
-                                            <th scope="col" class="px-6 py-3">Estado</th>
+                                            <th scope="col" class="px-6 py-4 font-bold tracking-wider">Fecha</th>
+                                            <th scope="col" class="px-6 py-4 font-bold tracking-wider">Vehículo</th>
+                                            <th scope="col" class="px-6 py-4 font-bold tracking-wider">Estado</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                         <tr
                                             v-for="reservation in pastReservations"
                                             :key="reservation.id"
-                                            class="bg-white border-b hover:bg-gray-50"
+                                            class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150"
                                         >
-                                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                            <td
+                                                class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
+                                            >
                                                 {{ formatDisplayDate(reservation.reservation_date) }}
                                             </td>
                                             <td class="px-6 py-4">
@@ -372,11 +398,14 @@ const changeMonth = (offset) => {
                                             </td>
                                             <td class="px-6 py-4">
                                                 <span
-                                                    class="px-2 py-1 text-xs font-semibold rounded-full"
+                                                    class="px-3 py-1 text-xs font-semibold rounded-full"
                                                     :class="{
-                                                        'bg-green-100 text-green-800': reservation.status === 'Asistió',
-                                                        'bg-red-100 text-red-800': reservation.status === 'Cancelada',
-                                                        'bg-gray-100 text-gray-800': reservation.status === 'Ausente',
+                                                        'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300':
+                                                            reservation.status === 'Asistió',
+                                                        'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300':
+                                                            reservation.status === 'Cancelada',
+                                                        'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300':
+                                                            reservation.status === 'Ausente',
                                                     }"
                                                 >
                                                     {{ reservation.status }}
@@ -395,62 +424,56 @@ const changeMonth = (offset) => {
         <!-- MODAL DE RESERVA -->
         <div
             v-if="showBookingModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300"
             @click.self="closeModal"
         >
-            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-                <h3 class="text-lg font-bold mb-4">Confirmar Reserva para el {{ selectedDay }}</h3>
-                <form @submit.prevent="submit">
-                    <div class="space-y-4">
-                        <div>
-                            <label for="vehicle_id" class="block font-medium text-sm text-gray-700"
-                                >¿Qué vehículo traerás?</label
-                            >
-                            <select
-                                id="vehicle_id"
-                                v-model="form.vehicle_id"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                                required
-                            >
-                                <!-- MOSTRAMOS TODOS los vehículos - el backend validará cuáles pueden reservar -->
-                                <option v-for="vehicle in vehicles" :key="vehicle.id" :value="vehicle.id">
-                                    {{ vehicle.marca }} {{ vehicle.modelo }} ({{ vehicle.patente }})
-                                    <!-- SOLO mostrar "Ya tiene reserva activa" para reservas CONFIRMADAS -->
-                                    <span v-if="vehiclesWithActiveReservations.has(vehicle.id)">
-                                        - Ya tiene reserva activa</span
-                                    >
-                                </option>
-                            </select>
-                            <div v-if="form.errors.vehicle_id" class="text-sm text-red-600 mt-1">
-                                {{ form.errors.vehicle_id }}
-                            </div>
-                        </div>
-                        <div>
-                            <label for="notes" class="block font-medium text-sm text-gray-700"
-                                >Notas Adicionales (Opcional)</label
-                            >
-                            <textarea
-                                id="notes"
-                                v-model="form.notes"
-                                rows="3"
-                                placeholder="Ej: Falla en el motor, ruido al frenar, etc."
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                            ></textarea>
-                            <div v-if="form.errors.notes" class="text-sm text-red-600 mt-1">
-                                {{ form.errors.notes }}
-                            </div>
-                        </div>
-                        <div
-                            v-if="form.errors.reservation_date"
-                            class="text-sm text-red-600 mt-1 p-3 bg-red-50 rounded-md"
+            <div
+                class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-lg border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+            >
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">
+                    Confirmar Reserva para el {{ selectedDay }}
+                </h3>
+                <form class="space-y-6" @submit.prevent="submit">
+                    <div>
+                        <InputLabel for="vehicle_id" value="¿Qué vehículo traerás?" />
+                        <select
+                            id="vehicle_id"
+                            v-model="form.vehicle_id"
+                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
+                            required
                         >
-                            {{ form.errors.reservation_date }}
-                        </div>
+                            <!-- MOSTRAMOS TODOS los vehículos - el backend validará cuáles pueden reservar -->
+                            <option v-for="vehicle in vehicles" :key="vehicle.id" :value="vehicle.id">
+                                {{ vehicle.marca }} {{ vehicle.modelo }} ({{ vehicle.patente }})
+                                <!-- SOLO mostrar "Ya tiene reserva activa" para reservas CONFIRMADAS -->
+                                <span v-if="vehiclesWithActiveReservations.has(vehicle.id)">
+                                    - Ya tiene reserva activa</span
+                                >
+                            </option>
+                        </select>
+                        <InputError class="mt-2" :message="form.errors.vehicle_id" />
                     </div>
-                    <div class="mt-6 flex justify-end space-x-3">
+                    <div>
+                        <InputLabel for="notes" value="Notas Adicionales (Opcional)" />
+                        <textarea
+                            id="notes"
+                            v-model="form.notes"
+                            rows="4"
+                            placeholder="Ej: Falla en el motor, ruido al frenar, etc."
+                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
+                        ></textarea>
+                        <InputError class="mt-2" :message="form.errors.notes" />
+                    </div>
+                    <div
+                        v-if="form.errors.reservation_date"
+                        class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl"
+                    >
+                        {{ form.errors.reservation_date }}
+                    </div>
+                    <div class="flex justify-end space-x-4 pt-6 border-t border-gray-100 dark:border-gray-700">
                         <button
                             type="button"
-                            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
+                            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm"
                             :disabled="form.processing"
                             @click="closeModal"
                         >
@@ -458,7 +481,7 @@ const changeMonth = (offset) => {
                         </button>
                         <button
                             type="submit"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 disabled:opacity-50"
                             :disabled="form.processing"
                         >
                             <span v-if="form.processing">Enviando...</span>
@@ -470,20 +493,25 @@ const changeMonth = (offset) => {
         </div>
 
         <!-- MODAL DE CONFIRMACIÓN DE CANCELACIÓN -->
-        <div v-if="showCancelModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <h3 class="text-lg font-bold mb-4 text-red-600">Confirmar Cancelación</h3>
-                <p class="mb-4">¿Estás seguro de que quieres cancelar esta reserva?</p>
-                <p class="mb-4 text-sm text-gray-600">Esta acción no se puede deshacer.</p>
-                <div class="flex justify-end space-x-3">
+        <div
+            v-if="showCancelModal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300"
+        >
+            <div
+                class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+            >
+                <h3 class="text-xl font-bold text-red-600 dark:text-red-400 mb-6">Confirmar Cancelación</h3>
+                <p class="mb-4 text-gray-700 dark:text-gray-300">¿Estás seguro de que quieres cancelar esta reserva?</p>
+                <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">Esta acción no se puede deshacer.</p>
+                <div class="flex justify-end space-x-4 pt-6 border-t border-gray-100 dark:border-gray-700">
                     <button
-                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
+                        class="px-6 py-3 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm"
                         @click="closeCancelModal"
                     >
                         Mantener Reserva
                     </button>
                     <button
-                        class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+                        class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200"
                         @click="confirmCancel"
                     >
                         Sí, Cancelar Reserva

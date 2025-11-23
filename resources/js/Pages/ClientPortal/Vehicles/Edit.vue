@@ -1,6 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
+import InputLabel from '@/Components/InputLabel.vue';
+import TextInput from '@/Components/TextInput.vue';
+import InputError from '@/Components/InputError.vue';
 
 const props = defineProps({ vehiculo: Object });
 
@@ -14,26 +17,33 @@ const form = useForm({
 
 const submit = () => form.patch(route('cliente.vehiculos.update', props.vehiculo.id));
 </script>
+
 <template>
     <Head :title="`Editar Vehículo: ${vehiculo.patente}`" />
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Editar Vehículo</h2>
-                <Link :href="route('cliente.vehiculos.index')" class="text-sm text-gray-700 underline"
-                    >&larr; Volver a Mis Vehículos</Link
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">Editar Vehículo</h2>
+                <Link
+                    :href="route('cliente.vehiculos.index')"
+                    class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline transition"
                 >
+                    &larr; Volver a Mis Vehículos
+                </Link>
             </div>
         </template>
+
         <div class="py-12">
             <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 bg-white border-b border-gray-200">
-                        <form @submit.prevent="submit">
+                <div
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
+                    <div class="p-8">
+                        <form class="space-y-6" @submit.prevent="submit">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label for="patente" class="block font-medium text-sm text-gray-700">Patente</label>
-                                    <input
+                                    <InputLabel for="patente" value="Patente" />
+                                    <TextInput
                                         id="patente"
                                         v-model="form.patente"
                                         type="text"
@@ -41,68 +51,58 @@ const submit = () => form.patch(route('cliente.vehiculos.update', props.vehiculo
                                         required
                                         autofocus
                                     />
-                                    <div v-if="form.errors.patente" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.patente }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.patente" />
                                 </div>
                                 <div>
-                                    <label for="marca" class="block font-medium text-sm text-gray-700">Marca</label>
-                                    <input
+                                    <InputLabel for="marca" value="Marca" />
+                                    <TextInput
                                         id="marca"
                                         v-model="form.marca"
                                         type="text"
                                         class="mt-1 block w-full"
                                         required
                                     />
-                                    <div v-if="form.errors.marca" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.marca }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.marca" />
                                 </div>
                                 <div>
-                                    <label for="modelo" class="block font-medium text-sm text-gray-700">Modelo</label>
-                                    <input
+                                    <InputLabel for="modelo" value="Modelo" />
+                                    <TextInput
                                         id="modelo"
                                         v-model="form.modelo"
                                         type="text"
                                         class="mt-1 block w-full"
                                         required
                                     />
-                                    <div v-if="form.errors.modelo" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.modelo }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.modelo" />
                                 </div>
                                 <div>
-                                    <label for="anio" class="block font-medium text-sm text-gray-700">Año</label>
-                                    <input
+                                    <InputLabel for="anio" value="Año" />
+                                    <TextInput
                                         id="anio"
-                                        v-model="form.anio"
+                                        v-model.number="form.anio"
                                         type="number"
                                         class="mt-1 block w-full"
                                         required
                                     />
-                                    <div v-if="form.errors.anio" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.anio }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.anio" />
                                 </div>
                                 <div class="md:col-span-2">
-                                    <label for="kilometraje" class="block font-medium text-sm text-gray-700"
-                                        >Kilometraje (Opcional)</label
-                                    >
-                                    <input
+                                    <InputLabel for="kilometraje" value="Kilometraje (Opcional)" />
+                                    <TextInput
                                         id="kilometraje"
-                                        v-model="form.kilometraje"
+                                        v-model.number="form.kilometraje"
                                         type="number"
                                         class="mt-1 block w-full"
                                     />
-                                    <div v-if="form.errors.kilometraje" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.kilometraje }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.kilometraje" />
                                 </div>
                             </div>
-                            <div class="flex items-center justify-end mt-6">
+                            <div
+                                class="flex items-center justify-end pt-6 border-t border-gray-100 dark:border-gray-700"
+                            >
                                 <button
                                     type="submit"
-                                    class="px-4 py-2 bg-gray-800 text-white rounded-md"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200"
                                     :disabled="form.processing"
                                 >
                                     Actualizar Vehículo

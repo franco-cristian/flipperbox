@@ -7,15 +7,29 @@ use FlipperBox\Inventory\Http\Requests\StoreSupplierRequest;
 use FlipperBox\Inventory\Http\Requests\UpdateSupplierRequest;
 use FlipperBox\Inventory\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class SupplierController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $query = Supplier::latest();
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('contact_person', 'ilike', "%{$search}%")
+                    ->orWhere('email', 'ilike', "%{$search}%")
+                    ->orWhere('phone', 'ilike', "%{$search}%");
+            });
+        }
+
         return Inertia::render('Inventory/Suppliers/Index', [
-            'suppliers' => Supplier::latest()->paginate(10),
+            'suppliers' => $query->paginate(10)->withQueryString(),
+            'filters' => $request->only(['search']),
         ]);
     }
 

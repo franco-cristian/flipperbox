@@ -19,12 +19,32 @@ use Inertia\Response;
 
 class WorkOrderController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        // La relación 'vehicle.cliente' ahora es 'vehicle.user' debido a la refactorización
-        $workOrders = WorkOrder::with(['vehicle.cliente', 'mechanic'])->latest('entry_date')->paginate(15);
+        $query = WorkOrder::with(['vehicle.cliente', 'mechanic'])->latest('entry_date');
 
-        return Inertia::render('WorkManagement/Index', ['workOrders' => $workOrders]);
+        // Lógica de Búsqueda
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                    ->orWhere('description', 'ilike', "%{$search}%")
+                    ->orWhereHas('vehicle', function ($q) use ($search) {
+                        $q->where('patente', 'ilike', "%{$search}%")
+                            ->orWhere('marca', 'ilike', "%{$search}%")
+                            ->orWhere('modelo', 'ilike', "%{$search}%");
+                    })
+                    ->orWhereHas('vehicle.cliente', function ($q) use ($search) {
+                        $q->where('name', 'ilike', "%{$search}%")
+                            ->orWhere('apellido', 'ilike', "%{$search}%");
+                    });
+            });
+        }
+
+        return Inertia::render('WorkManagement/Index', [
+            'workOrders' => $query->paginate(15)->withQueryString(),
+            'filters' => $request->only(['search']),
+        ]);
     }
 
     public function create(Vehiculo $vehiculo): Response

@@ -8,16 +8,32 @@ use FlipperBox\Crm\Actions\CreateUserAsClientAction;
 use FlipperBox\Crm\Http\Requests\StoreUserAsClientRequest;
 use FlipperBox\Crm\Http\Requests\UpdateUserAsClientRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CrmController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $query = User::role('Cliente')->latest();
+
+        // Lógica de Búsqueda Global
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('apellido', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('telefono', 'like', "%{$search}%")
+                    ->orWhere('documento_valor', 'like', "%{$search}%");
+            });
+        }
+
         return Inertia::render('Crm/Clientes/Index', [
-            'clientes' => User::role('Cliente')->latest()->paginate(10),
+            'clientes' => $query->paginate(10)->withQueryString(),
+            'filters' => $request->only(['search']),
         ]);
     }
 

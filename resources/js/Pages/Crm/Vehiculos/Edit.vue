@@ -1,6 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
+import InputLabel from '@/Components/InputLabel.vue';
+import TextInput from '@/Components/TextInput.vue';
+import InputError from '@/Components/InputError.vue';
 
 const props = defineProps({
     cliente: {
@@ -37,10 +40,13 @@ const submit = () => {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">
                     Editar Vehículo: <span class="font-bold">{{ vehiculo.patente }}</span>
                 </h2>
-                <Link :href="route('clientes.show', { user: cliente.id })" class="text-sm text-gray-700 underline">
+                <Link
+                    :href="route('clientes.show', { user: cliente.id })"
+                    class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline transition"
+                >
                     &larr; Volver al cliente
                 </Link>
             </div>
@@ -48,144 +54,121 @@ const submit = () => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 bg-white border-b border-gray-200">
-                        <form @submit.prevent="submit">
+                <div
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
+                    <div class="p-8">
+                        <form class="space-y-6" @submit.prevent="submit">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Campo Patente -->
                                 <div>
-                                    <label for="patente" class="block font-medium text-sm text-gray-700">Patente</label>
-                                    <input
+                                    <InputLabel for="patente" value="Patente" />
+                                    <TextInput
                                         id="patente"
                                         v-model="form.patente"
                                         type="text"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        class="mt-1 block w-full"
                                         required
                                         autofocus
                                     />
-                                    <div v-if="form.errors.patente" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.patente }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.patente" />
                                 </div>
 
                                 <!-- Campo Marca -->
                                 <div>
-                                    <label for="marca" class="block font-medium text-sm text-gray-700">Marca</label>
-                                    <input
+                                    <InputLabel for="marca" value="Marca" />
+                                    <TextInput
                                         id="marca"
                                         v-model="form.marca"
                                         type="text"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        class="mt-1 block w-full"
                                         required
                                     />
-                                    <div v-if="form.errors.marca" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.marca }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.marca" />
                                 </div>
 
                                 <!-- Campo Modelo -->
                                 <div>
-                                    <label for="modelo" class="block font-medium text-sm text-gray-700">Modelo</label>
-                                    <input
+                                    <InputLabel for="modelo" value="Modelo" />
+                                    <TextInput
                                         id="modelo"
                                         v-model="form.modelo"
                                         type="text"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        class="mt-1 block w-full"
                                         required
                                     />
-                                    <div v-if="form.errors.modelo" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.modelo }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.modelo" />
                                 </div>
 
                                 <!-- Campo Año -->
                                 <div>
-                                    <label for="anio" class="block font-medium text-sm text-gray-700">Año</label>
-                                    <input
+                                    <InputLabel for="anio" value="Año" />
+                                    <TextInput
                                         id="anio"
-                                        v-model="form.anio"
+                                        v-model.number="form.anio"
                                         type="number"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        class="mt-1 block w-full"
                                         required
                                     />
-                                    <div v-if="form.errors.anio" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.anio }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.anio" />
                                 </div>
 
                                 <!-- Campo Kilometraje -->
                                 <div>
-                                    <label for="kilometraje" class="block font-medium text-sm text-gray-700"
-                                        >Kilometraje (Opcional)</label
-                                    >
-                                    <input
+                                    <InputLabel for="kilometraje" value="Kilometraje (Opcional)" />
+                                    <TextInput
                                         id="kilometraje"
-                                        v-model="form.kilometraje"
+                                        v-model.number="form.kilometraje"
                                         type="number"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        class="mt-1 block w-full"
                                     />
-                                    <div v-if="form.errors.kilometraje" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.kilometraje }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.kilometraje" />
                                 </div>
 
                                 <!-- Campo VIN -->
                                 <div>
-                                    <label for="vin" class="block font-medium text-sm text-gray-700"
-                                        >N° de Chasis (VIN) (Opcional)</label
-                                    >
-                                    <input
-                                        id="vin"
-                                        v-model="form.vin"
-                                        type="text"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                                    />
-                                    <div v-if="form.errors.vin" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.vin }}
-                                    </div>
+                                    <InputLabel for="vin" value="N° de Chasis (VIN) (Opcional)" />
+                                    <TextInput id="vin" v-model="form.vin" type="text" class="mt-1 block w-full" />
+                                    <InputError class="mt-2" :message="form.errors.vin" />
                                 </div>
 
                                 <!-- Campo Número de Motor -->
                                 <div>
-                                    <label for="numero_motor" class="block font-medium text-sm text-gray-700"
-                                        >Número de Motor (Opcional)</label
-                                    >
-                                    <input
+                                    <InputLabel for="numero_motor" value="Número de Motor (Opcional)" />
+                                    <TextInput
                                         id="numero_motor"
                                         v-model="form.numero_motor"
                                         type="text"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        class="mt-1 block w-full"
                                     />
-                                    <div v-if="form.errors.numero_motor" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.numero_motor }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.numero_motor" />
                                 </div>
 
                                 <!-- Campo Observaciones -->
                                 <div class="md:col-span-2">
-                                    <label for="observaciones" class="block font-medium text-sm text-gray-700"
-                                        >Observaciones (Opcional)</label
-                                    >
+                                    <InputLabel for="observaciones" value="Observaciones (Opcional)" />
                                     <textarea
                                         id="observaciones"
                                         v-model="form.observaciones"
-                                        rows="3"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                                        rows="4"
+                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm transition-colors duration-200"
+                                        placeholder="Observaciones adicionales sobre el vehículo..."
                                     ></textarea>
-                                    <div v-if="form.errors.observaciones" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.observaciones }}
-                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.observaciones" />
                                 </div>
                             </div>
 
                             <!-- Botón de Envío -->
-                            <div class="flex items-center justify-end mt-6">
+                            <div
+                                class="flex items-center justify-end pt-6 border-t border-gray-100 dark:border-gray-700"
+                            >
                                 <button
                                     type="submit"
-                                    class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200"
                                     :disabled="form.processing"
                                 >
-                                    Actualizar Vehículo
+                                    <span v-if="form.processing">Actualizando...</span>
+                                    <span v-else>Actualizar Vehículo</span>
                                 </button>
                             </div>
                         </form>

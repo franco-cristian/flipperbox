@@ -1,7 +1,9 @@
-<!-- Archivo: resources/js/Pages/Inventory/Products/Create.vue (VERSIÓN FINAL SIMPLIFICADA) -->
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
+import InputLabel from '@/Components/InputLabel.vue';
+import TextInput from '@/Components/TextInput.vue';
+import InputError from '@/Components/InputError.vue';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -15,7 +17,7 @@ const form = useForm({
     name: '',
     sku: '',
     description: '',
-    cost: 0.0, // <-- ÚNICO CAMPO DE COSTO
+    cost: 0.0,
     iva_percentage: 21,
     profit_margin: 40,
     current_stock: 0,
@@ -43,8 +45,11 @@ const submit = () => {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">Crear Nuevo Producto</h2>
-                <Link :href="route('inventario.products.index')" class="text-sm text-gray-700 underline">
+                <h2 class="font-bold text-2xl text-gray-800 dark:text-white leading-tight">Crear Nuevo Producto</h2>
+                <Link
+                    :href="route('inventario.products.index')"
+                    class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline transition"
+                >
                     &larr; Volver al listado
                 </Link>
             </div>
@@ -52,152 +57,156 @@ const submit = () => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 bg-white border-b border-gray-200">
-                        <form @submit.prevent="submit">
+                <div
+                    class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300"
+                >
+                    <div class="p-8">
+                        <form class="space-y-8" @submit.prevent="submit">
                             <!-- SECCIÓN 1: DATOS DEL PRODUCTO -->
-                            <h3 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Datos del Producto</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="md:col-span-2">
-                                    <label for="name" class="block font-medium text-sm text-gray-700"
-                                        >Nombre del Producto</label
-                                    >
-                                    <input
-                                        id="name"
-                                        v-model="form.name"
-                                        type="text"
-                                        class="mt-1 block w-full"
-                                        required
-                                        autofocus
-                                    />
-                                    <div v-if="form.errors.name" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.name }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="sku" class="block font-medium text-sm text-gray-700"
-                                        >SKU (Código Único)</label
-                                    >
-                                    <input id="sku" v-model="form.sku" type="text" class="mt-1 block w-full" required />
-                                    <div v-if="form.errors.sku" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.sku }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="supplier_id" class="block font-medium text-sm text-gray-700"
-                                        >Proveedor</label
-                                    >
-                                    <select
-                                        id="supplier_id"
-                                        v-model="form.supplier_id"
-                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                                        required
-                                    >
-                                        <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
-                                            {{ supplier.name }}
-                                        </option>
-                                    </select>
-                                    <div v-if="form.errors.supplier_id" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.supplier_id }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-6">
-                                <label for="description" class="block font-medium text-sm text-gray-700"
-                                    >Descripción (Opcional)</label
+                            <div>
+                                <h3
+                                    class="text-xl font-bold text-gray-900 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700"
                                 >
-                                <textarea
-                                    id="description"
-                                    v-model="form.description"
-                                    rows="3"
-                                    class="mt-1 block w-full"
-                                ></textarea>
+                                    Datos del Producto
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="md:col-span-2">
+                                        <InputLabel for="name" value="Nombre del Producto" />
+                                        <TextInput
+                                            id="name"
+                                            v-model="form.name"
+                                            type="text"
+                                            class="mt-1 block w-full"
+                                            required
+                                            autofocus
+                                        />
+                                        <InputError class="mt-2" :message="form.errors.name" />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="sku" value="SKU (Código Único)" />
+                                        <TextInput
+                                            id="sku"
+                                            v-model="form.sku"
+                                            type="text"
+                                            class="mt-1 block w-full"
+                                            required
+                                        />
+                                        <InputError class="mt-2" :message="form.errors.sku" />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="supplier_id" value="Proveedor" />
+                                        <select
+                                            id="supplier_id"
+                                            v-model="form.supplier_id"
+                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
+                                            required
+                                        >
+                                            <option
+                                                v-for="supplier in suppliers"
+                                                :key="supplier.id"
+                                                :value="supplier.id"
+                                            >
+                                                {{ supplier.name }}
+                                            </option>
+                                        </select>
+                                        <InputError class="mt-2" :message="form.errors.supplier_id" />
+                                    </div>
+                                </div>
+                                <div class="mt-6">
+                                    <InputLabel for="description" value="Descripción (Opcional)" />
+                                    <textarea
+                                        id="description"
+                                        v-model="form.description"
+                                        rows="4"
+                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
+                                        placeholder="Descripción del producto..."
+                                    ></textarea>
+                                </div>
                             </div>
 
                             <!-- SECCIÓN 2: PRECIOS Y STOCK -->
-                            <h3 class="text-lg font-medium text-gray-900 mt-8 mb-4 border-b pb-2">Precios y Stock</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div>
-                                    <label for="cost" class="block font-medium text-sm text-gray-700"
-                                        >Precio de Costo ($)</label
-                                    >
-                                    <input
-                                        id="cost"
-                                        v-model="form.cost"
-                                        type="number"
-                                        step="0.01"
-                                        class="mt-1 block w-full"
-                                        required
-                                    />
-                                    <div v-if="form.errors.cost" class="text-sm text-red-600 mt-1">
-                                        {{ form.errors.cost }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="iva_percentage" class="block font-medium text-sm text-gray-700"
-                                        >IVA (%)</label
-                                    >
-                                    <input
-                                        id="iva_percentage"
-                                        v-model="form.iva_percentage"
-                                        type="number"
-                                        class="mt-1 block w-full"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label for="profit_margin" class="block font-medium text-sm text-gray-700"
-                                        >Margen de Ganancia (%)</label
-                                    >
-                                    <input
-                                        id="profit_margin"
-                                        v-model="form.profit_margin"
-                                        type="number"
-                                        class="mt-1 block w-full"
-                                        required
-                                    />
-                                </div>
-                                <div class="bg-gray-100 p-4 rounded-md flex items-center justify-center">
+                            <div>
+                                <h3
+                                    class="text-xl font-bold text-gray-900 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700"
+                                >
+                                    Precios y Stock
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <div>
-                                        <label class="block font-medium text-sm text-gray-700"
-                                            >Precio de Venta Calculado</label
-                                        >
-                                        <p class="text-2xl font-bold text-gray-900 mt-1">${{ calculatedPrice }}</p>
+                                        <InputLabel for="cost" value="Precio de Costo ($)" />
+                                        <input
+                                            id="cost"
+                                            v-model.number="form.cost"
+                                            type="number"
+                                            step="0.01"
+                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
+                                            required
+                                        />
+                                        <InputError class="mt-2" :message="form.errors.cost" />
                                     </div>
-                                </div>
-                                <div>
-                                    <label for="current_stock" class="block font-medium text-sm text-gray-700"
-                                        >Stock Inicial</label
+                                    <div>
+                                        <InputLabel for="iva_percentage" value="IVA (%)" />
+                                        <input
+                                            id="iva_percentage"
+                                            v-model.number="form.iva_percentage"
+                                            type="number"
+                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="profit_margin" value="Margen de Ganancia (%)" />
+                                        <input
+                                            id="profit_margin"
+                                            v-model.number="form.profit_margin"
+                                            type="number"
+                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
+                                            required
+                                        />
+                                    </div>
+                                    <div
+                                        class="bg-gray-100 dark:bg-gray-700 p-6 rounded-xl border border-gray-200 dark:border-gray-600 flex items-center justify-center"
                                     >
-                                    <input
-                                        id="current_stock"
-                                        v-model="form.current_stock"
-                                        type="number"
-                                        class="mt-1 block w-full"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label for="min_threshold" class="block font-medium text-sm text-gray-700"
-                                        >Umbral de Stock Bajo</label
-                                    >
-                                    <input
-                                        id="min_threshold"
-                                        v-model="form.min_threshold"
-                                        type="number"
-                                        class="mt-1 block w-full"
-                                        required
-                                    />
+                                        <div class="text-center">
+                                            <InputLabel value="Precio de Venta Calculado" />
+                                            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                                                ${{ calculatedPrice }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <InputLabel for="current_stock" value="Stock Inicial" />
+                                        <input
+                                            id="current_stock"
+                                            v-model.number="form.current_stock"
+                                            type="number"
+                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <InputLabel for="min_threshold" value="Umbral de Stock Bajo" />
+                                        <input
+                                            id="min_threshold"
+                                            v-model.number="form.min_threshold"
+                                            type="number"
+                                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
+                                            required
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-end mt-8">
+                            <div
+                                class="flex items-center justify-end pt-6 border-t border-gray-200 dark:border-gray-700"
+                            >
                                 <button
                                     type="submit"
-                                    class="px-6 py-3 bg-gray-800 text-white rounded-md hover:bg-gray-700 font-semibold"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200"
                                     :disabled="form.processing"
                                 >
-                                    Guardar Producto
+                                    <span v-if="form.processing">Guardando...</span>
+                                    <span v-else>Guardar Producto</span>
                                 </button>
                             </div>
                         </form>

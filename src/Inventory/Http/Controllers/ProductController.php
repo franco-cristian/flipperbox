@@ -10,16 +10,29 @@ use FlipperBox\Inventory\Http\Requests\UpdateProductRequest;
 use FlipperBox\Inventory\Models\Product;
 use FlipperBox\Inventory\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $query = Product::with('suppliers')->latest();
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('sku', 'ilike', "%{$search}%")
+                    ->orWhere('description', 'ilike', "%{$search}%");
+            });
+        }
+
         return Inertia::render('Inventory/Products/Index', [
-            'products' => Product::with('suppliers')->latest()->paginate(10),
+            'products' => $query->paginate(10)->withQueryString(),
+            'filters' => $request->only(['search']),
         ]);
     }
 
