@@ -47,6 +47,8 @@ class DemoSeeder extends Seeder
             'gestionar reservas',
             'ver mis vehiculos',
             'solicitar reserva',
+            'ver servicios',
+            'gestionar servicios',
         ];
 
         foreach ($permissions as $permission) {

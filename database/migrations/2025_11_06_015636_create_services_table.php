@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2)->comment('Precio de la mano de obra');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
