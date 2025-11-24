@@ -21,16 +21,25 @@ class RegistrationTest extends TestCase
     {
         Role::create(['name' => 'Cliente', 'guard_name' => 'web']);
 
+        $role = Role::findByName('Cliente');
+        $role->givePermissionTo(\Spatie\Permission\Models\Permission::create(['name' => 'ver mis vehiculos', 'guard_name' => 'web']));
+
         $response = $this->post('/register', [
             'name' => 'Test User',
-            'apellido' => 'Tester',
+            'apellido' => 'Test Apellido',
+            'telefono' => '1122334455',
             'email' => 'test@example.com',
-            'telefono' => '1234567890',
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('cliente.dashboard'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@example.com',
+            'apellido' => 'Test Apellido',
+            'telefono' => '1122334455',
+        ]);
     }
 }
