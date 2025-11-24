@@ -19,6 +19,7 @@ const navigationLinks = ref([
     { name: 'Dashboard', routeName: 'dashboard', permission: null },
     { name: 'Clientes', routeName: 'clientes.index', permission: 'ver clientes' },
     { name: 'Productos', routeName: 'inventario.products.index', permission: 'ver inventario' },
+    { name: 'Servicios', routeName: 'services.index', permission: 'ver servicios' },
     { name: 'Proveedores', routeName: 'inventario.suppliers.index', permission: 'ver proveedores' },
     { name: 'Órdenes de Trabajo', routeName: 'work-orders.index', permission: 'ver ordenes de trabajo' },
     { name: 'Gestión de Cupos', routeName: 'admin.scheduling.capacities.index', permission: 'gestionar cupos' },
