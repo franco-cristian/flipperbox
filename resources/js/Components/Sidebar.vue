@@ -1,13 +1,28 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { ref } from 'vue';
+import { computed } from 'vue';
 
-const navigationLinks = ref([
-    { name: 'Dashboard', href: route('dashboard'), permission: null },
+const page = usePage();
+const user = page.props.auth.user;
+
+// Determinamos la ruta del dashboard según los permisos
+const dashboardRoute = computed(() => {
+    if (user.permissions.includes('ver mis vehiculos')) {
+        return 'cliente.dashboard'; // Es Cliente
+    }
+    if (user.permissions.includes('gestionar ordenes de trabajo') && !user.permissions.includes('crear usuarios')) {
+        return 'mecanico.dashboard'; // Es Mecánico (asumiendo permisos estándar)
+    }
+    // Por defecto Admin o si falla la lógica anterior
+    return 'dashboard';
+});
+
+const navigationLinks = computed(() => [
+    // Usamos la ruta dinámica aquí
+    { name: 'Dashboard', href: route(dashboardRoute.value), permission: null },
     { name: 'Clientes', href: route('clientes.index'), permission: 'ver clientes' },
     { name: 'Productos', href: route('inventario.products.index'), permission: 'ver inventario' },
-    { name: 'Servicios', href: route('services.index'), permission: 'ver servicios' },
     { name: 'Proveedores', href: route('inventario.suppliers.index'), permission: 'ver proveedores' },
     { name: 'Órdenes de Trabajo', href: route('work-orders.index'), permission: 'ver ordenes de trabajo' },
     { name: 'Gestión de Cupos', href: route('admin.scheduling.capacities.index'), permission: 'gestionar cupos' },
@@ -22,7 +37,7 @@ const navigationLinks = ref([
 
 const can = (permission) => {
     if (!permission) return true;
-    return usePage().props.auth.user.permissions.includes(permission);
+    return user.permissions.includes(permission);
 };
 </script>
 
@@ -32,7 +47,7 @@ const can = (permission) => {
     >
         <!-- Logo -->
         <div class="flex items-center justify-center mb-8">
-            <Link :href="route('dashboard')">
+            <Link :href="route(dashboardRoute)">
                 <ApplicationLogo class="block h-12 w-auto" />
             </Link>
         </div>

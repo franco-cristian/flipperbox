@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
@@ -11,15 +11,25 @@ import NotificationBell from '@/Components/NotificationBell.vue';
 import ChatbotWidget from '@/Components/ChatbotWidget.vue';
 import { useDarkMode } from '@/Composables/useDarkMode';
 
-const { isDark, toggleDarkMode } = useDarkMode(); // <-- USAR COMPOSABLE
+const { isDark, toggleDarkMode } = useDarkMode();
 
 const showingNavigationDropdown = ref(false);
 
-const navigationLinks = ref([
-    { name: 'Dashboard', routeName: 'dashboard', permission: null },
+const page = usePage();
+const user = page.props.auth.user;
+
+// Lógica para determinar el dashboard correcto
+const dashboardRouteName = computed(() => {
+    if (user.permissions.includes('ver mis vehiculos')) return 'cliente.dashboard';
+    if (user.permissions.includes('gestionar ordenes de trabajo') && !user.permissions.includes('crear usuarios'))
+        return 'mecanico.dashboard';
+    return 'dashboard';
+});
+
+const navigationLinks = computed(() => [
+    { name: 'Dashboard', routeName: dashboardRouteName.value, permission: null },
     { name: 'Clientes', routeName: 'clientes.index', permission: 'ver clientes' },
     { name: 'Productos', routeName: 'inventario.products.index', permission: 'ver inventario' },
-    { name: 'Servicios', routeName: 'services.index', permission: 'ver servicios' },
     { name: 'Proveedores', routeName: 'inventario.suppliers.index', permission: 'ver proveedores' },
     { name: 'Órdenes de Trabajo', routeName: 'work-orders.index', permission: 'ver ordenes de trabajo' },
     { name: 'Gestión de Cupos', routeName: 'admin.scheduling.capacities.index', permission: 'gestionar cupos' },
@@ -30,7 +40,7 @@ const navigationLinks = ref([
 
 const can = (permission) => {
     if (!permission) return true;
-    return usePage().props.auth.user.permissions.includes(permission);
+    return user.permissions.includes(permission);
 };
 </script>
 
@@ -56,7 +66,7 @@ const can = (permission) => {
             class="fixed inset-y-0 z-30 flex-shrink-0 w-64 overflow-y-auto bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 md:hidden transition-colors duration-300"
         >
             <div class="py-4 flex justify-center border-b border-gray-200 dark:border-gray-700">
-                <Link href="/">
+                <Link :href="route(dashboardRouteName)">
                     <ApplicationLogo class="block h-12 w-auto" />
                 </Link>
             </div>
