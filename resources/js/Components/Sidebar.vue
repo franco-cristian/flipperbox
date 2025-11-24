@@ -6,23 +6,21 @@ import { computed } from 'vue';
 const page = usePage();
 const user = page.props.auth.user;
 
-// Determinamos la ruta del dashboard según los permisos
 const dashboardRoute = computed(() => {
     if (user.permissions.includes('ver mis vehiculos')) {
-        return 'cliente.dashboard'; // Es Cliente
+        return 'cliente.dashboard';
     }
     if (user.permissions.includes('gestionar ordenes de trabajo') && !user.permissions.includes('crear usuarios')) {
-        return 'mecanico.dashboard'; // Es Mecánico (asumiendo permisos estándar)
+        return 'mecanico.dashboard';
     }
-    // Por defecto Admin o si falla la lógica anterior
     return 'dashboard';
 });
 
 const navigationLinks = computed(() => [
-    // Usamos la ruta dinámica aquí
     { name: 'Dashboard', href: route(dashboardRoute.value), permission: null },
     { name: 'Clientes', href: route('clientes.index'), permission: 'ver clientes' },
     { name: 'Productos', href: route('inventario.products.index'), permission: 'ver inventario' },
+    { name: 'Servicios', href: route('services.index'), permission: 'ver servicios' },
     { name: 'Proveedores', href: route('inventario.suppliers.index'), permission: 'ver proveedores' },
     { name: 'Órdenes de Trabajo', href: route('work-orders.index'), permission: 'ver ordenes de trabajo' },
     { name: 'Gestión de Cupos', href: route('admin.scheduling.capacities.index'), permission: 'gestionar cupos' },
