@@ -1,8 +1,10 @@
 <?php
 
+use FlipperBox\WorkManagement\Http\Controllers\ServiceController;
 use FlipperBox\WorkManagement\Http\Controllers\WorkOrderController;
 use Illuminate\Support\Facades\Route;
 
+// Rutas de órdenes de trabajo
 Route::middleware('can:ver ordenes de trabajo')->prefix('ordenes-trabajo')->name('work-orders.')->group(function () {
     Route::get('/', [WorkOrderController::class, 'index'])->name('index');
 
@@ -24,5 +26,18 @@ Route::middleware('can:ver ordenes de trabajo')->prefix('ordenes-trabajo')->name
         Route::delete('/external-costs/{externalCost}', [WorkOrderController::class, 'removeExternalCost'])->name('external-costs.remove');
 
         Route::patch('/{workOrder}/assign-mechanic', [WorkOrderController::class, 'assignMechanic'])->name('assign-mechanic');
+    });
+});
+
+// --- RUTAS PARA GESTIÓN DE SERVICIOS ---
+Route::middleware('can:ver servicios')->group(function () {
+    Route::get('/servicios', [ServiceController::class, 'index'])->name('services.index');
+
+    Route::middleware('can:gestionar servicios')->group(function () {
+        Route::get('/servicios/crear', [ServiceController::class, 'create'])->name('services.create');
+        Route::post('/servicios', [ServiceController::class, 'store'])->name('services.store');
+        Route::get('/servicios/{service}/editar', [ServiceController::class, 'edit'])->name('services.edit');
+        Route::patch('/servicios/{service}', [ServiceController::class, 'update'])->name('services.update');
+        Route::delete('/servicios/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
     });
 });
