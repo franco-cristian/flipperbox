@@ -20,10 +20,9 @@ const user = page.props.auth.user;
 
 // Lógica para determinar el dashboard correcto
 const dashboardRouteName = computed(() => {
-    if (user.permissions.includes('ver mis vehiculos')) return 'cliente.dashboard';
-    if (user.permissions.includes('gestionar ordenes de trabajo') && !user.permissions.includes('crear usuarios'))
-        return 'mecanico.dashboard';
-    return 'dashboard';
+    if (user.roles.includes('Admin')) return 'dashboard';
+    if (user.roles.includes('Mecanico')) return 'mecanico.dashboard';
+    return 'cliente.dashboard';
 });
 
 const navigationLinks = computed(() => [

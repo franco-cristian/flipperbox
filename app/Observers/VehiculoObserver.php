@@ -19,8 +19,14 @@ class VehiculoObserver
                 'error' => 'No se puede eliminar este vehículo porque tiene órdenes de trabajo activas. Por favor, complete o cancele esas órdenes primero.',
             ]);
         }
-
         // Si llegamos aquí, significa que todas las órdenes asociadas (si las hay)
         // ya están 'Completada' o 'Cancelada', por lo que es seguro hacer un Soft Delete.
+
+        // Impedimos borrar si hay reservas 'Confirmada' (futuras o pendientes de atención)
+        if ($vehiculo->reservations()->where('status', 'Confirmada')->exists()) {
+            throw ValidationException::withMessages([
+                'error' => 'No se puede eliminar este vehículo porque tiene reservas confirmadas pendientes. Cancele las reservas primero.',
+            ]);
+        }
     }
 }

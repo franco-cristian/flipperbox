@@ -4,6 +4,7 @@ namespace FlipperBox\Crm\Models;
 
 use App\Models\User;
 use Database\Factories\VehiculoFactory;
+use FlipperBox\Scheduling\Models\Reservation;
 use FlipperBox\WorkManagement\Models\WorkOrder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -48,5 +49,10 @@ class Vehiculo extends Model
     public function workOrders(): HasMany
     {
         return $this->hasMany(WorkOrder::class, 'vehicle_id');
+    }
+
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class, 'vehicle_id');
     }
 }

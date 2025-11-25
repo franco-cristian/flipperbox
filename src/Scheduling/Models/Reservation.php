@@ -20,6 +20,6 @@ class Reservation extends Model
 
     public function vehicle(): BelongsTo
     {
-        return $this->belongsTo(Vehiculo::class);
+        return $this->belongsTo(Vehiculo::class)->withTrashed();
     }
 }

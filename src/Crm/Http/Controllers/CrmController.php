@@ -23,9 +23,9 @@ class CrmController extends Controller
         if ($request->has('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('apellido', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('apellido', 'ilike', "%{$search}%")
+                    ->orWhere('email', 'ilike', "%{$search}%")
                     ->orWhere('telefono', 'like', "%{$search}%")
                     ->orWhere('documento_valor', 'like', "%{$search}%");
             });

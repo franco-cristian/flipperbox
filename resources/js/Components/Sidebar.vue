@@ -7,13 +7,14 @@ const page = usePage();
 const user = page.props.auth.user;
 
 const dashboardRoute = computed(() => {
-    if (user.permissions.includes('ver mis vehiculos')) {
-        return 'cliente.dashboard';
+    if (user.roles.includes('Admin')) {
+        return 'dashboard';
     }
-    if (user.permissions.includes('gestionar ordenes de trabajo') && !user.permissions.includes('crear usuarios')) {
+    if (user.roles.includes('Mecanico')) {
         return 'mecanico.dashboard';
     }
-    return 'dashboard';
+    // Por defecto asumimos Cliente
+    return 'cliente.dashboard';
 });
 
 const navigationLinks = computed(() => [

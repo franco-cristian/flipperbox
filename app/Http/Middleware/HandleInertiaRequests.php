@@ -41,6 +41,7 @@ class HandleInertiaRequests extends Middleware
                         'id' => $request->user()->id,
                         'name' => $request->user()->name,
                         'email' => $request->user()->email,
+                        'roles' => $request->user()->getRoleNames(),
                         // Los permisos solo se calculan si el usuario existe.
                         'permissions' => $request->user()->getAllPermissions()->pluck('name'),
                     ] : null,

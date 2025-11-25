@@ -109,6 +109,7 @@ const closeModal = () => {
                                         </td>
                                         <td class="px-6 py-4 text-right text-sm font-medium">
                                             <Link
+                                                v-if="can('gestionar ordenes de trabajo')"
                                                 :href="route('work-orders.show', workOrder.id)"
                                                 class="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-4 transition"
                                                 >Ver Detalle</Link
