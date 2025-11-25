@@ -3,30 +3,38 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use FlipperBox\Crm\Models\Vehiculo;
+use FlipperBox\WorkManagement\Models\WorkOrder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
+        'apellido',
         'email',
+        'telefono',
+        'documento_tipo',
+        'documento_valor',
         'password',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -44,5 +52,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Define la relación: Un usuario (si es cliente) puede tener muchos vehículos.
+     */
+    public function vehiculos(): HasMany
+    {
+        return $this->hasMany(Vehiculo::class);
+    }
+
+    /**
+     * Define la relación: Un usuario (si es mecánico) puede tener muchas órdenes de trabajo asignadas.
+     */
+    public function workOrders(): HasMany
+    {
+        return $this->hasMany(WorkOrder::class, 'mechanic_id');
     }
 }
