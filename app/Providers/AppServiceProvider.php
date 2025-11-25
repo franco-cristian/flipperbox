@@ -12,6 +12,7 @@ use FlipperBox\Crm\Models\Vehiculo;
 use FlipperBox\Inventory\Models\Product;
 use FlipperBox\WorkManagement\Models\Service;
 use FlipperBox\WorkManagement\Models\WorkOrder;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,6 +31,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+
+            if ($appUrl = config('app.url')) {
+                URL::forceRootUrl($appUrl);
+            }
+        }
+
         Vite::prefetch(concurrency: 3);
 
         Product::observe(ProductObserver::class);
