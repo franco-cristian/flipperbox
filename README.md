@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="public/images/logo-full.jpg" width="400" alt="FlipperBox Logo">
+    <img src="./public/images/logo-full.jpg" width="400" alt="FlipperBox Logo">
 </p>
 
 <h1 align="center">FlipperBox</h1>
