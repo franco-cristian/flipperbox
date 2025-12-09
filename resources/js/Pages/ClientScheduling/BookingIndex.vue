@@ -63,7 +63,11 @@ const formatSelectedDate = (dateString) => {
 };
 
 const form = useForm({
-    vehicle_id: props.vehicles && props.vehicles.length > 0 ? props.vehicles[0].id : null,
+    // Selecciona el primer vehículo que NO tenga reserva activa:
+    vehicle_id:
+        props.vehicles && props.vehicles.length > 0
+            ? props.vehicles.find((v) => !vehiclesWithActiveReservations.value.has(v.id))?.id
+            : null,
     reservation_date: '',
     notes: '',
 });
@@ -442,13 +446,16 @@ const changeMonth = (offset) => {
                             class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 transition-colors duration-200"
                             required
                         >
-                            <!-- MOSTRAMOS TODOS los vehículos - el backend validará cuáles pueden reservar -->
-                            <option v-for="vehicle in vehicles" :key="vehicle.id" :value="vehicle.id">
+                            <option
+                                v-for="vehicle in vehicles"
+                                :key="vehicle.id"
+                                :value="vehicle.id"
+                                :disabled="vehiclesWithActiveReservations.has(vehicle.id)"
+                            >
                                 {{ vehicle.marca }} {{ vehicle.modelo }} ({{ vehicle.patente }})
-                                <!-- SOLO mostrar "Ya tiene reserva activa" para reservas CONFIRMADAS -->
                                 <span v-if="vehiclesWithActiveReservations.has(vehicle.id)">
-                                    - Ya tiene reserva activa</span
-                                >
+                                    (Ya tiene reserva activa)
+                                </span>
                             </option>
                         </select>
                         <InputError class="mt-2" :message="form.errors.vehicle_id" />

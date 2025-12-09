@@ -105,15 +105,14 @@ class BookingController extends Controller
             ]);
         }
 
-        // Solo verificar reservas del MISMO vehículo en la MISMA fecha
-        $hasActiveReservationForVehicleOnThisDate = Reservation::where('vehicle_id', $validated['vehicle_id'])
-            ->where('reservation_date', $validated['reservation_date'])
+        // Verificar si el VEHÍCULO ya tiene UNA reserva activa pendiente (Global)
+        $hasActiveReservationForVehicle = Reservation::where('vehicle_id', $validated['vehicle_id'])
             ->where('status', 'Confirmada')
             ->exists();
 
-        if ($hasActiveReservationForVehicleOnThisDate) {
+        if ($hasActiveReservationForVehicle) {
             throw ValidationException::withMessages([
-                'vehicle_id' => 'Este vehículo ya tiene una reserva confirmada para esta fecha específica.',
+                'vehicle_id' => 'Este vehículo ya tiene una reserva activa pendiente. Debes asistir o cancelarla antes de solicitar otra.',
             ]);
         }
 
@@ -149,7 +148,7 @@ class BookingController extends Controller
             $admin->notify(new ReservationCreated($reservation));
         }
 
-        // 3. Enviar Email al Cliente (NUEVO CÓDIGO)
+        // 3. Enviar Email al Cliente
         Mail::to($user)->send(new ReservationConfirmed($reservation));
 
         return back()->with('success', '¡Tu reserva ha sido confirmada! Te esperamos.');
